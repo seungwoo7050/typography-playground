@@ -1,0 +1,28 @@
+# dependencies
+/node_modules
+
+# testing
+/coverage
+/playwright-report
+/test-results
+
+# next.js
+/.next/
+/out/
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+
+# env files (필요 시 opt-in으로 커밋)
+.env*
+
+# cloudflare
+.wrangler
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
