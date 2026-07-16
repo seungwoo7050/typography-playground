@@ -1,1 +1,25 @@
 @import "tailwindcss";
+
+@theme {
+  /* 근모노크롬 팔레트 — 절제된 톤 + 인터랙션/CTA에만 쓰는 단일 시그널 컬러.
+     실제 폰트 파일은 fonts 설정 커밋에서 self-host로 연결된다(지금은
+     시스템 폴백 포함 토큰 이름만 확정). */
+  --color-ink: oklch(18% 0.01 260);
+  --color-paper: oklch(98% 0.004 260);
+  --color-mist: oklch(88% 0.006 260);
+  --color-graphite: oklch(45% 0.012 260);
+  --color-signal: oklch(62% 0.19 275);
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", var(--font-sans);
+}
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
