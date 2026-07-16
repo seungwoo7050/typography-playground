@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "next dev --webpack -p 3100",
     "build": "next build --webpack",
-    "start": "next start -p 3100",
+    "preview": "npm run build && serve -l 3100 out",
     "start:e2e": "serve -l 3200 out",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
