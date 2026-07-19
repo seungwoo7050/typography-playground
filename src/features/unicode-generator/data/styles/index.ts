@@ -1,6 +1,7 @@
 import type { UnicodeStyleDefinition } from "../../lib/types";
 import { bubbleStyles } from "./bubble";
 import { doubleStruckStyles } from "./double-struck";
+import { fullwidthStyles } from "./fullwidth";
 import { gothicStyles } from "./gothic";
 import { scriptStyles } from "./script";
 import { squareStyles } from "./square";
@@ -12,6 +13,7 @@ export const allStyles: UnicodeStyleDefinition[] = [
   ...scriptStyles,
   ...gothicStyles,
   ...doubleStruckStyles,
+  ...fullwidthStyles,
   ...bubbleStyles,
   ...squareStyles,
 ];
