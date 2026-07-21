@@ -9,6 +9,7 @@ import { smallCapsStyles } from "./small-caps";
 import { squareStyles } from "./square";
 import { superscriptSubscriptStyles } from "./superscript-subscript";
 import { weightStyles } from "./weight";
+import { zalgoStyles } from "./zalgo";
 
 // 각 스타일 그룹 파일이 이 배열에 자신의 정의를 추가한다.
 export const allStyles: UnicodeStyleDefinition[] = [
@@ -22,4 +23,5 @@ export const allStyles: UnicodeStyleDefinition[] = [
   ...squareStyles,
   ...superscriptSubscriptStyles,
   ...decorationStyles,
+  ...zalgoStyles,
 ];
