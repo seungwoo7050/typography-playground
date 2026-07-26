@@ -49,3 +49,14 @@ export interface EffectDefinition<P = Record<string, unknown>> {
     t: number,
   ) => void;
 }
+
+/**
+ * 서로 다른 P를 가진 이펙트들을 한데 모으는 registry/index/render-loop
+ * 경계에서 쓰는 타입 지움(type erasure) 별칭. drawFrame(params: P, ...)
+ * 처럼 P가 함수 인자 위치(반공변)에 나타나 구조적 서브타이핑이
+ * 안 되므로, 개별 이펙트 파일 안에서는 항상 구체 타입(예:
+ * EffectDefinition<GradientFillParams>)을 쓰고, 이 경계에서만
+ * AnyEffectDefinition으로 지운다.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyEffectDefinition = EffectDefinition<any>;

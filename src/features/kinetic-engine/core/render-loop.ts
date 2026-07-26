@@ -1,4 +1,4 @@
-import type { EffectDefinition, EffectGLState } from "../effects/types";
+import type { AnyEffectDefinition, EffectGLState } from "../effects/types";
 import type { GlyphOutline } from "./glyph-outline";
 
 /**
@@ -33,7 +33,7 @@ export class RenderLoop {
   private ctx2d: CanvasRenderingContext2D | null = null;
   private gl: WebGL2RenderingContext | null = null;
 
-  private effect: EffectDefinition | null = null;
+  private effect: AnyEffectDefinition | null = null;
   private outline: GlyphOutline | null = null;
   private params: Record<string, unknown> = {};
   private glState: EffectGLState | null = null;
@@ -55,7 +55,7 @@ export class RenderLoop {
   /** 렌더링할 씬(이펙트+아웃라인+파라미터)을 교체한다. WebGL 이펙트로
    * 전환하면 initGL을 호출해 그 이펙트 전용 GPU 리소스를 새로 만든다. */
   setScene(
-    effect: EffectDefinition,
+    effect: AnyEffectDefinition,
     outline: GlyphOutline,
     params: Record<string, unknown> = effect.defaultParams,
   ): void {
