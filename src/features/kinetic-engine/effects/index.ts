@@ -1,5 +1,6 @@
 import { glitchEffect } from "./glitch";
 import { gradientFillEffect } from "./gradient-fill";
+import { liquidWaveEffect } from "./liquid-wave";
 import { outlineStrokeEffect } from "./outline-stroke";
 import type { AnyEffectDefinition } from "./types";
 
@@ -8,4 +9,5 @@ export const allEffects: AnyEffectDefinition[] = [
   gradientFillEffect,
   outlineStrokeEffect,
   glitchEffect,
+  liquidWaveEffect,
 ];
