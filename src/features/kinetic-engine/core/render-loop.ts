@@ -42,29 +42,38 @@ export class RenderLoop {
     this.scheduler = scheduler;
   }
 
+  /** canvas2d/webgl 이펙트를 실시간으로 오가려면 두 종류의 캔버스
+   * 엘리먼트를 각각 붙여둬야 한다(하나의 캔버스는 컨텍스트 타입을
+   * 한 번 정하면 바꿀 수 없다) — 그래서 서로를 null로 지우지 않고
+   * 둘 다 유지한다. renderFrame이 effect.renderTarget으로 어느
+   * 쪽을 쓸지 고른다. */
   attachCanvas2D(ctx: CanvasRenderingContext2D): void {
     this.ctx2d = ctx;
-    this.gl = null;
   }
 
   attachWebGL(gl: WebGL2RenderingContext): void {
     this.gl = gl;
-    this.ctx2d = null;
   }
 
-  /** 렌더링할 씬(이펙트+아웃라인+파라미터)을 교체한다. WebGL 이펙트로
-   * 전환하면 initGL을 호출해 그 이펙트 전용 GPU 리소스를 새로 만든다. */
+  /** 렌더링할 씬(이펙트+아웃라인+파라미터)을 교체한다. 이펙트나
+   * 아웃라인이 실제로 바뀔 때만 WebGL 리소스를 다시 만든다 — 파라미터
+   * 슬라이더만 움직일 때마다 삼각분할/GPU 버퍼를 재생성하는 낭비를
+   * 막는다(파라미터는 매 프레임 유니폼으로만 전달됨). */
   setScene(
     effect: AnyEffectDefinition,
     outline: GlyphOutline,
     params: Record<string, unknown> = effect.defaultParams,
   ): void {
+    const sceneShapeUnchanged = this.effect === effect && this.outline === outline;
     this.effect = effect;
     this.outline = outline;
     this.params = params;
-    this.glState = null;
-    if (effect.renderTarget === "webgl" && this.gl && effect.initGL) {
-      this.glState = effect.initGL(this.gl, outline, params);
+
+    if (!sceneShapeUnchanged) {
+      this.glState = null;
+      if (effect.renderTarget === "webgl" && this.gl && effect.initGL) {
+        this.glState = effect.initGL(this.gl, outline, params);
+      }
     }
   }
 

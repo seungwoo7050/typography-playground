@@ -153,6 +153,70 @@ describe("RenderLoop", () => {
     expect(initGL).toHaveBeenCalledWith(gl, outline, effect.defaultParams);
   });
 
+  it("같은 이펙트/아웃라인에 파라미터만 바꿔 setScene하면 initGL을 다시 호출하지 않는다", () => {
+    const { scheduler } = createFakeScheduler();
+    const initGL = vi.fn().mockReturnValue({ program: "fake" });
+    const effect: EffectDefinition = {
+      id: "test-webgl-2",
+      label: "Test WebGL 2",
+      renderTarget: "webgl",
+      defaultParams: { amplitude: 1 },
+      paramSchema: {},
+      supportsSvgExport: false,
+      initGL,
+      renderGL: vi.fn(),
+    };
+    const loop = new RenderLoop(scheduler);
+    loop.attachWebGL({} as WebGL2RenderingContext);
+
+    loop.setScene(effect, outline, { amplitude: 1 });
+    loop.setScene(effect, outline, { amplitude: 9 }); // 파라미터만 변경
+
+    expect(initGL).toHaveBeenCalledTimes(1);
+  });
+
+  it("아웃라인이 바뀌면(같은 이펙트라도) initGL을 다시 호출한다", () => {
+    const { scheduler } = createFakeScheduler();
+    const initGL = vi.fn().mockReturnValue({ program: "fake" });
+    const effect: EffectDefinition = {
+      id: "test-webgl-3",
+      label: "Test WebGL 3",
+      renderTarget: "webgl",
+      defaultParams: {},
+      paramSchema: {},
+      supportsSvgExport: false,
+      initGL,
+      renderGL: vi.fn(),
+    };
+    const loop = new RenderLoop(scheduler);
+    loop.attachWebGL({} as WebGL2RenderingContext);
+    const otherOutline: GlyphOutline = {
+      commands: [],
+      bbox: { x1: 0, y1: 0, x2: 0, y2: 0 },
+      fontSize: 50,
+    };
+
+    loop.setScene(effect, outline);
+    loop.setScene(effect, otherOutline);
+
+    expect(initGL).toHaveBeenCalledTimes(2);
+  });
+
+  it("attachCanvas2D 이후 attachWebGL을 호출해도 ctx2d 부착이 유지된다(둘 다 동시에 붙을 수 있음)", () => {
+    const { scheduler, tick } = createFakeScheduler();
+    const drawFrame = vi.fn();
+    const effect = createCanvas2DEffect(drawFrame);
+    const loop = new RenderLoop(scheduler);
+    const ctx = {} as CanvasRenderingContext2D;
+    loop.attachCanvas2D(ctx);
+    loop.attachWebGL({} as WebGL2RenderingContext);
+    loop.setScene(effect, outline);
+    loop.start();
+    tick(100);
+
+    expect(drawFrame).toHaveBeenCalledTimes(1);
+  });
+
   it("ctx가 붙어있지 않으면 조용히 아무 것도 하지 않는다(throw하지 않음)", () => {
     const { scheduler, tick } = createFakeScheduler();
     const drawFrame = vi.fn();
