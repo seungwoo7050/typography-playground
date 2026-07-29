@@ -40,6 +40,76 @@ export function extractGlyphOutline(
   };
 }
 
+function translateCommand(cmd: PathCommand, dx: number, dy: number): PathCommand {
+  switch (cmd.type) {
+    case "Z":
+      return cmd;
+    case "M":
+    case "L":
+      return { ...cmd, x: cmd.x + dx, y: cmd.y + dy };
+    case "Q":
+      return {
+        ...cmd,
+        x1: cmd.x1 + dx,
+        y1: cmd.y1 + dy,
+        x: cmd.x + dx,
+        y: cmd.y + dy,
+      };
+    case "C":
+      return {
+        ...cmd,
+        x1: cmd.x1 + dx,
+        y1: cmd.y1 + dy,
+        x2: cmd.x2 + dx,
+        y2: cmd.y2 + dy,
+        x: cmd.x + dx,
+        y: cmd.y + dy,
+      };
+  }
+}
+
+/** 아웃라인 전체(커맨드 + bbox)를 (dx, dy)만큼 평행이동한다. */
+export function translateOutline(
+  outline: GlyphOutline,
+  dx: number,
+  dy: number,
+): GlyphOutline {
+  return {
+    commands: outline.commands.map((cmd) => translateCommand(cmd, dx, dy)),
+    bbox: {
+      x1: outline.bbox.x1 + dx,
+      y1: outline.bbox.y1 + dy,
+      x2: outline.bbox.x2 + dx,
+      y2: outline.bbox.y2 + dy,
+    },
+    fontSize: outline.fontSize,
+  };
+}
+
+/**
+ * 아웃라인을 주어진 캔버스 크기 안에 가운데 정렬한다.
+ *
+ * extractGlyphOutline이 반환하는 원본 좌표는 텍스트 원점(대략 첫
+ * 글자의 베이스라인 좌측)이 (0,0)이다 — 캔버스에 별도 위치 조정 없이
+ * 그대로 그리면 상승부가 캔버스 위쪽 바깥으로 잘려나간다. 이펙트
+ * 각각이 위치 조정을 책임지지 않도록(그리고 캔버스 클리어가 항상
+ * 전체 캔버스를 대상으로 하도록) 아웃라인을 그리기 전에 한 번만
+ * 가운데로 옮겨둔다.
+ */
+export function centerOutline(
+  outline: GlyphOutline,
+  canvasWidth: number,
+  canvasHeight: number,
+): GlyphOutline {
+  const glyphCenterX = (outline.bbox.x1 + outline.bbox.x2) / 2;
+  const glyphCenterY = (outline.bbox.y1 + outline.bbox.y2) / 2;
+  return translateOutline(
+    outline,
+    canvasWidth / 2 - glyphCenterX,
+    canvasHeight / 2 - glyphCenterY,
+  );
+}
+
 /** GlyphOutline의 커맨드를 Canvas2D Path2D로 변환한다. */
 export function outlineToPath2D(outline: GlyphOutline): Path2D {
   const path2d = new Path2D();
