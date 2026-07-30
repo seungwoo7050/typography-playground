@@ -48,21 +48,6 @@
 }
 
 @font-face {
-  font-family: "Bricolage Grotesque";
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("/fonts/bricolage-grotesque/400.woff2") format("woff2");
-}
-@font-face {
-  font-family: "Bricolage Grotesque";
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src: url("/fonts/bricolage-grotesque/700.woff2") format("woff2");
-}
-
-@font-face {
   font-family: "Fraunces";
   font-style: normal;
   font-weight: 400;
@@ -144,4 +129,100 @@
   font-weight: 700;
   font-display: swap;
   src: url("/fonts/syne/700.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Playfair Display";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/playfair-display/400.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Bebas Neue";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/bebas-neue/400.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Poppins";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/poppins/400.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Montserrat";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/montserrat/400.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Abril Fatface";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/abril-fatface/400.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Bungee";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/bungee/400.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Monoton";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/monoton/400.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Alfa Slab One";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/alfa-slab-one/400.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Staatliches";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/staatliches/400.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "DM Serif Display";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/dm-serif-display/400.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Sora";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/sora/400.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Zilla Slab";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/zilla-slab/400.woff2") format("woff2");
 }

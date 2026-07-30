@@ -28,7 +28,10 @@ const USER_AGENT =
 const FONT_MANIFEST = [
   { family: "Inter", slug: "inter", repoSlug: "inter", weights: [400, 500, 600, 700] },
   { family: "Space Grotesk", slug: "space-grotesk", repoSlug: "spacegrotesk", weights: [400, 700] },
-  { family: "Bricolage Grotesque", slug: "bricolage-grotesque", repoSlug: "bricolagegrotesque", weights: [400, 700] },
+  // Bricolage Grotesque: 키네틱 엔진 카탈로그에서 제외됨(§font-loader.ts
+  // 주석 참고 — opentype.js가 GSUB lookupType 6 substFormat 2를
+  // 지원하지 않아 두 글자 이상 텍스트에서 무조건 실패). 사이트
+  // 어디서도 쓰지 않아 여기서도 제거.
   { family: "Fraunces", slug: "fraunces", repoSlug: "fraunces", weights: [400, 700] },
   { family: "Unbounded", slug: "unbounded", repoSlug: "unbounded", weights: [400, 700] },
   { family: "Archivo Black", slug: "archivo-black", repoSlug: "archivoblack", weights: [400] },
@@ -36,6 +39,20 @@ const FONT_MANIFEST = [
   { family: "Anton", slug: "anton", repoSlug: "anton", weights: [400] },
   { family: "Righteous", slug: "righteous", repoSlug: "righteous", weights: [400] },
   { family: "Syne", slug: "syne", repoSlug: "syne", weights: [400, 700] },
+  { family: "Playfair Display", slug: "playfair-display", repoSlug: "playfairdisplay", weights: [400] },
+  { family: "Bebas Neue", slug: "bebas-neue", repoSlug: "bebasneue", weights: [400] },
+  { family: "Poppins", slug: "poppins", repoSlug: "poppins", weights: [400] },
+  { family: "Montserrat", slug: "montserrat", repoSlug: "montserrat", weights: [400] },
+  { family: "Abril Fatface", slug: "abril-fatface", repoSlug: "abrilfatface", weights: [400] },
+  { family: "Bungee", slug: "bungee", repoSlug: "bungee", weights: [400] },
+  { family: "Monoton", slug: "monoton", repoSlug: "monoton", weights: [400] },
+  { family: "Alfa Slab One", slug: "alfa-slab-one", repoSlug: "alfaslabone", weights: [400] },
+  { family: "Staatliches", slug: "staatliches", repoSlug: "staatliches", weights: [400] },
+  // Space Mono, Instrument Serif, Chivo: Bricolage Grotesque와 같은 이유로
+  // 키네틱 엔진 카탈로그에서 제외됨 — 여기서도 제거.
+  { family: "DM Serif Display", slug: "dm-serif-display", repoSlug: "dmserifdisplay", weights: [400] },
+  { family: "Sora", slug: "sora", repoSlug: "sora", weights: [400] },
+  { family: "Zilla Slab", slug: "zilla-slab", repoSlug: "zillaslab", weights: [400] },
 ];
 
 async function fetchCss(family, weights) {

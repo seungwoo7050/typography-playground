@@ -29,8 +29,35 @@ const USER_AGENT =
  * 파일명이다(가변 폰트는 대괄호 축 표기 포함, 리포에서 직접 확인
  * 필요 — 짐작하지 않는다).
  */
+// 4개 제외됨(다운로드 후 opentype.js로 실제 파싱 검증하다 발견):
+// bricolage-grotesque, space-mono, instrument-serif, chivo. 전부
+// "substitutionType lookupType: 6 - substFormat: N is not yet
+// supported" 예외를 던진다 — opentype.js가 GSUB의 chained-context
+// 치환 룩업(타입 6)을 지원하지 않는데, 이 4개 폰트는 이 룩업이
+// GSUB 테이블에 있어서 단일 문자는 되지만 두 글자 이상은 무조건
+// 실패한다. 라이선스 문제가 아니라 렌더링 엔진의 한계 — 다시
+// 추가하지 않는다.
 const KINETIC_FONT_MANIFEST = [
   { slug: "space-grotesk", repoSlug: "spacegrotesk", repoFile: "SpaceGrotesk[wght].ttf" },
+  { slug: "fraunces", repoSlug: "fraunces", repoFile: "Fraunces[SOFT,WONK,opsz,wght].ttf" },
+  { slug: "unbounded", repoSlug: "unbounded", repoFile: "Unbounded[wght].ttf" },
+  { slug: "archivo-black", repoSlug: "archivoblack", repoFile: "ArchivoBlack-Regular.ttf" },
+  { slug: "big-shoulders", repoSlug: "bigshoulders", repoFile: "BigShoulders[opsz,wght].ttf" },
+  { slug: "anton", repoSlug: "anton", repoFile: "Anton-Regular.ttf" },
+  { slug: "righteous", repoSlug: "righteous", repoFile: "Righteous-Regular.ttf" },
+  { slug: "syne", repoSlug: "syne", repoFile: "Syne[wght].ttf" },
+  { slug: "playfair-display", repoSlug: "playfairdisplay", repoFile: "PlayfairDisplay[wght].ttf" },
+  { slug: "bebas-neue", repoSlug: "bebasneue", repoFile: "BebasNeue-Regular.ttf" },
+  { slug: "poppins", repoSlug: "poppins", repoFile: "Poppins-Regular.ttf" },
+  { slug: "montserrat", repoSlug: "montserrat", repoFile: "Montserrat[wght].ttf" },
+  { slug: "abril-fatface", repoSlug: "abrilfatface", repoFile: "AbrilFatface-Regular.ttf" },
+  { slug: "bungee", repoSlug: "bungee", repoFile: "Bungee-Regular.ttf" },
+  { slug: "monoton", repoSlug: "monoton", repoFile: "Monoton-Regular.ttf" },
+  { slug: "alfa-slab-one", repoSlug: "alfaslabone", repoFile: "AlfaSlabOne-Regular.ttf" },
+  { slug: "staatliches", repoSlug: "staatliches", repoFile: "Staatliches-Regular.ttf" },
+  { slug: "dm-serif-display", repoSlug: "dmserifdisplay", repoFile: "DMSerifDisplay-Regular.ttf" },
+  { slug: "sora", repoSlug: "sora", repoFile: "Sora[wght].ttf" },
+  { slug: "zilla-slab", repoSlug: "zillaslab", repoFile: "ZillaSlab-Regular.ttf" },
 ];
 
 async function downloadFile(url, destPath) {
