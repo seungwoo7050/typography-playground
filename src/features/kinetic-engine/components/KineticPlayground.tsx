@@ -2,21 +2,23 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { Font } from "opentype.js";
-import { loadKineticFont } from "../core/font-loader";
+import { KINETIC_FONTS, loadKineticFont } from "../core/font-loader";
 import { centerOutline, extractGlyphOutline } from "../core/glyph-outline";
 import { getEffect, listEffects } from "../effects/registry";
 import { Canvas } from "./Canvas";
 import { EffectGallery } from "./EffectGallery";
+import { FontPicker } from "./FontPicker";
 import { ParamPanel } from "./ParamPanel";
 
 const effects = listEffects();
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 280;
 const FONT_SIZE = 120;
-const KINETIC_FONT_ID = "space-grotesk";
+const DEFAULT_FONT_ID = "space-grotesk";
 
 export function KineticPlayground() {
   const [text, setText] = useState("Wave");
+  const [fontId, setFontId] = useState(DEFAULT_FONT_ID);
   const [font, setFont] = useState<Font | null>(null);
   const [effectId, setEffectId] = useState(effects[0]?.id ?? "");
   const [params, setParams] = useState<Record<string, unknown>>(
@@ -25,13 +27,15 @@ export function KineticPlayground() {
 
   useEffect(() => {
     let cancelled = false;
-    loadKineticFont(KINETIC_FONT_ID).then((loaded) => {
+    // 폰트 전환 중에는 이전 폰트가 그대로 남아있다 — 캔버스가
+    // 잠깐 비는 것보다 낫다(로딩 스피너는 2단계 폴리시 대상).
+    loadKineticFont(fontId).then((loaded) => {
       if (!cancelled) setFont(loaded);
     });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [fontId]);
 
   const outline = useMemo(() => {
     if (!font || !text) return null;
@@ -78,6 +82,8 @@ export function KineticPlayground() {
       />
 
       <ParamPanel effect={effect} params={params} onChange={setParams} />
+
+      <FontPicker fonts={KINETIC_FONTS} selectedId={fontId} onSelect={setFontId} />
     </div>
   );
 }
