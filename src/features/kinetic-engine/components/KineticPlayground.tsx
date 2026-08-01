@@ -7,6 +7,7 @@ import { centerOutline, extractGlyphOutline } from "../core/glyph-outline";
 import { getEffect, listEffects } from "../effects/registry";
 import { Canvas } from "./Canvas";
 import { EffectGallery } from "./EffectGallery";
+import { ExportPanel } from "./ExportPanel";
 import { FontPicker } from "./FontPicker";
 import { ParamPanel } from "./ParamPanel";
 
@@ -84,6 +85,8 @@ export function KineticPlayground() {
       <ParamPanel effect={effect} params={params} onChange={setParams} />
 
       <FontPicker fonts={KINETIC_FONTS} selectedId={fontId} onSelect={setFontId} />
+
+      <ExportPanel font={font} text={text} effect={effect} params={params} />
     </div>
   );
 }
