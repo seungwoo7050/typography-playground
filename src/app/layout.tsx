@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { CustomCursor } from "@/components/layout/CustomCursor";
 import { Nav } from "@/components/layout/Nav";
 import "./globals.css";
 
@@ -15,6 +16,7 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body>
+        <CustomCursor />
         <Nav />
         {children}
       </body>
