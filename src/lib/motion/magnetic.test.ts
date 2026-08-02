@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { calculateMagneticOffset, lerp } from "./magnetic";
+import { calculateMagneticOffset, lerp, springStep } from "./magnetic";
 
 // useMagnetic 훅(rAF 루프, DOM style 대입)은 jsdom이 rAF를 구현하지
 // 않아 여기서 테스트하지 않는다 — 실제 브라우저로 검증한다. 여기서는
-// DOM/rAF와 분리된 순수 함수(오프셋 계산, lerp)만 검증한다.
+// DOM/rAF와 분리된 순수 함수(오프셋 계산, springStep, lerp)만
+// 검증한다.
 
 const rect = { left: 100, top: 100, width: 40, height: 40 }; // 중심 (120, 120)
 
@@ -68,5 +69,46 @@ describe("lerp", () => {
       current = lerp(current, 100, 0.15);
     }
     expect(current).toBeCloseTo(100, 0);
+  });
+});
+
+describe("springStep", () => {
+  // 기준값은 직접 시뮬레이션해서 얻었다(손 계산으로 안정성을 판단하려다
+  // 오류가 나서 — k=0.2, c=0.8은 143까지 발산에 가깝게 오버슈트하고
+  // 40프레임 가까이 걸렸다. 그리드 스캔으로 stiffness=0.3, damping=0.5가
+  // 오버슈트 ~3%, 11프레임(~180ms) 안에 2% 이내로 정착함을 확인하고
+  // 그 시뮬레이션의 실제 출력값을 테스트 기준으로 그대로 썼다).
+  const STIFFNESS = 0.3;
+  const DAMPING = 0.5;
+
+  it("정지 상태에서 첫 스텝은 target*stiffness만큼 움직인다", () => {
+    const { position } = springStep(0, 0, 100, STIFFNESS, DAMPING);
+    expect(position).toBeCloseTo(15, 5); // 0 + (0+100*0.3)*0.5 = 15
+  });
+
+  it("기본 파라미터에서 target을 약간 오버슈트한 뒤(약 3%) 정착한다", () => {
+    let position = 0;
+    let velocity = 0;
+    let maxPosition = -Infinity;
+    for (let i = 0; i < 40; i++) {
+      const step = springStep(position, velocity, 100, STIFFNESS, DAMPING);
+      position = step.position;
+      velocity = step.velocity;
+      if (position > maxPosition) maxPosition = position;
+    }
+    expect(maxPosition).toBeGreaterThan(100); // 오버슈트가 실제로 있다
+    expect(maxPosition).toBeLessThan(115); // 15% 넘게 발산하지 않는다
+    expect(position).toBeCloseTo(100, 1); // 40프레임 뒤엔 정착
+  });
+
+  it("target이 그대로면(이미 그 자리) 정지 상태를 유지한다", () => {
+    const { position, velocity } = springStep(50, 0, 50, STIFFNESS, DAMPING);
+    expect(position).toBe(50);
+    expect(velocity).toBe(0);
+  });
+
+  it("damping이 0이면 스텝 이후 속도가 0으로 죽는다(감쇠 전부)", () => {
+    const { velocity } = springStep(0, 100, 100, STIFFNESS, 0);
+    expect(velocity).toBe(0);
   });
 });

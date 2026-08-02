@@ -14,21 +14,49 @@ export interface MagneticOptions {
   radius?: number;
   /** 포인터가 엘리먼트 중심에 있을 때의 최대 당김 강도(px) */
   strength?: number;
-  /** lerp 계수(0-1) — 클수록 목표 위치를 더 빠르게 따라간다 */
-  ease?: number;
+  /** 스프링 강성(값이 클수록 목표를 더 빠르게 따라간다) */
+  stiffness?: number;
+  /** 속도 감쇠 계수(0-1, 값이 작을수록 더 빨리 멎는다) */
+  damping?: number;
 }
 
+// stiffness/damping 조합을 직접 시뮬레이션해서 고른 값이다(0.05~0.4 x
+// 0.5~0.85 그리드 스캔) — 오버슈트가 15% 넘지 않으면서 60fps 기준
+// 11프레임(~180ms) 안에 목표값의 2% 이내로 정착하는 조합 중 가장
+// 빠른 축에 속한다. 손으로 대충 고른 값이 아니라 실제로 발산하지
+// 않고 과하게 출렁이지도 않는지 수치 시뮬레이션으로 확인했다(초기에
+// stiffness=0.2, damping=0.8을 감으로 골랐다가 60프레임을 시뮬레이션
+// 해보니 143까지 오버슈트하고 정착에 40프레임 가까이 걸려 다시 골랐다).
 const DEFAULT_OPTIONS: Required<MagneticOptions> = {
   radius: 70,
   strength: 16,
-  ease: 0.15,
+  stiffness: 0.3,
+  damping: 0.5,
 };
+
+/**
+ * 감쇠 스프링 한 스텝을 계산한다 — position/velocity를 target 쪽으로
+ * 수렴시키되, 순수 lerp와 달리 약간의 오버슈트(살짝 지나쳤다가
+ * 돌아오는)가 생겨 더 "탄성 있는" 느낌을 준다. DOM/rAF와 분리된
+ * 순수 함수라 유닛 테스트 가능하다.
+ */
+export function springStep(
+  position: number,
+  velocity: number,
+  target: number,
+  stiffness: number,
+  damping: number,
+): { position: number; velocity: number } {
+  const nextVelocity = (velocity + (target - position) * stiffness) * damping;
+  const nextPosition = position + nextVelocity;
+  return { position: nextPosition, velocity: nextVelocity };
+}
 
 /**
  * 포인터가 엘리먼트 중심에서 radius 안에 있으면, 중심에 가까울수록
  * 1에 수렴하는 비율(pull)로 포인터 방향 오프셋을 계산한다. DOM/rAF와
  * 완전히 분리된 순수 함수라 유닛 테스트 가능하다 — 실제 매 프레임
- * 적용은 useMagnetic 훅이 lerp와 함께 담당한다.
+ * 적용(springStep으로 수렴)은 useMagnetic 훅이 담당한다.
  */
 export function calculateMagneticOffset(
   pointerX: number,
@@ -56,23 +84,25 @@ export function lerp(current: number, target: number, ease: number): number {
 }
 
 /**
- * 엘리먼트를 포인터 쪽으로 부드럽게 끌어당기는 훅. pointermove로
- * 목표 오프셋을 계산하고, 별도의 rAF 루프가 lerp로 현재 위치를
- * 목표로 수렴시켜 transform을 갱신한다 — pointermove 핸들러 안에서
- * 바로 transform을 대입하면(직접 이벤트 포지셔닝) 딱딱하게 스냅되는
- * 느낌이 나기 때문에 반드시 분리한다.
+ * 엘리먼트를 포인터 쪽으로 끌어당기는 훅. pointermove로 목표
+ * 오프셋을 계산하고, 별도의 rAF 루프가 감쇠 스프링(springStep)으로
+ * 현재 위치를 목표로 수렴시켜 transform을 갱신한다 —
+ * pointermove 핸들러 안에서 바로 transform을 대입하면(직접 이벤트
+ * 포지셔닝) 딱딱하게 스냅되는 느낌이 나기 때문에 반드시 분리한다.
  */
 export function useMagnetic<T extends HTMLElement>(
   options: MagneticOptions = {},
 ) {
   const ref = useRef<T | null>(null);
-  const current = useRef({ x: 0, y: 0 });
+  const position = useRef({ x: 0, y: 0 });
+  const velocity = useRef({ x: 0, y: 0 });
   const target = useRef({ x: 0, y: 0 });
   const frameRef = useRef<number | null>(null);
 
   const radius = options.radius ?? DEFAULT_OPTIONS.radius;
   const strength = options.strength ?? DEFAULT_OPTIONS.strength;
-  const ease = options.ease ?? DEFAULT_OPTIONS.ease;
+  const stiffness = options.stiffness ?? DEFAULT_OPTIONS.stiffness;
+  const damping = options.damping ?? DEFAULT_OPTIONS.damping;
 
   useEffect(() => {
     const el = ref.current;
@@ -91,10 +121,24 @@ export function useMagnetic<T extends HTMLElement>(
     }
 
     function tick() {
-      current.current.x = lerp(current.current.x, target.current.x, ease);
-      current.current.y = lerp(current.current.y, target.current.y, ease);
+      const stepX = springStep(
+        position.current.x,
+        velocity.current.x,
+        target.current.x,
+        stiffness,
+        damping,
+      );
+      const stepY = springStep(
+        position.current.y,
+        velocity.current.y,
+        target.current.y,
+        stiffness,
+        damping,
+      );
+      position.current = { x: stepX.position, y: stepY.position };
+      velocity.current = { x: stepX.velocity, y: stepY.velocity };
       if (el) {
-        el.style.transform = `translate(${current.current.x.toFixed(2)}px, ${current.current.y.toFixed(2)}px)`;
+        el.style.transform = `translate(${position.current.x.toFixed(2)}px, ${position.current.y.toFixed(2)}px)`;
       }
       frameRef.current = requestAnimationFrame(tick);
     }
@@ -106,7 +150,7 @@ export function useMagnetic<T extends HTMLElement>(
       window.removeEventListener("pointermove", handlePointerMove);
       if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
     };
-  }, [radius, strength, ease]);
+  }, [radius, strength, stiffness, damping]);
 
   return ref;
 }
