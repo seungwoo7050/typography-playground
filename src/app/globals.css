@@ -101,3 +101,20 @@ body {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-repeat: repeat;
 }
+
+/* 유니코드 스타일 카드의 스태거드 크로스페이드 — 순수 CSS 애니메이션
+   (JS 애니메이션 라이브러리 없이) + React key 리마운트로 트리거한다.
+   fill-mode:both가 핵심: 이게 없으면 delay 구간 동안 기본 스타일
+   (완전 불투명, 블러 없음)로 보여 스태거 효과가 사라진다 — delay
+   동안은 from 상태를, 종료 후엔 to 상태를 유지해야 낮은 인덱스
+   카드부터 순서대로 나타나는 계단식 효과가 실제로 보인다. */
+@keyframes style-card-fade {
+  from {
+    opacity: 0;
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
