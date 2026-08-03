@@ -84,3 +84,20 @@ body {
     cursor: none;
   }
 }
+
+/* 필름 그레인 텍스처 — 완전한 플랫 컬러 대신 미세한 유기적 질감을
+   더해 화면이 "생성형 AI가 뽑은 듯한 매끈함(슬롭)"으로 읽히지 않게
+   한다. 외부 이미지 없이 SVG feTurbulence로 절차적 노이즈를
+   만들어 극히 낮은 불투명도로 얹는다 — mix-blend-mode:overlay라
+   밝은 영역은 살짝 밝게, 어두운 영역은 살짝 어둡게 걸려 컬러 자체를
+   더럽히지 않고 질감만 더한다. */
+.grain-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+}

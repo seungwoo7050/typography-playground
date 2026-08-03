@@ -16,6 +16,7 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body>
+        <div className="grain-overlay" aria-hidden />
         <CustomCursor />
         <Nav />
         {children}
