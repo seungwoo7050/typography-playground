@@ -29,6 +29,17 @@ export function computeExportFontSize(exportWidth: number): number {
 }
 
 /**
+ * PNG export가 실제로 거치는 단계. canvas.toBlob()은 브라우저가
+ * 세부 인코딩 퍼센트를 노출하지 않는다 — 그래서 "37%..." 같은 가짜
+ * 숫자를 지어내는 대신, 코드가 실제로 통과하는 체크포인트(준비 →
+ * 렌더링 → 인코딩 → 완료)를 그대로 진행 신호로 쓴다. 작은 크기는
+ * 이 단계들이 사실상 동시에 지나가 시각적으로 안 보일 수 있는데,
+ * 그것도 정직한 결과다 — 실제로 그만큼 빠르다는 뜻이므로 억지로
+ * 지연을 넣지 않는다.
+ */
+export type ExportPhase = "preparing" | "rendering" | "encoding" | "done";
+
+/**
  * 지정한 해상도로 현재 이펙트를 다시 렌더링해 PNG Blob을 만든다.
  * 화면에 보이는 캔버스를 그대로 스케일하지 않고, 글리프 아웃라인
  * 추출부터 다시 한다 — opentype.js 벡터 아웃라인이 해상도 독립적이라
@@ -44,7 +55,9 @@ export async function exportPng(
   effect: AnyEffectDefinition,
   params: Record<string, unknown>,
   size: PngExportSize,
+  onProgress?: (phase: ExportPhase) => void,
 ): Promise<Blob> {
+  onProgress?.("preparing");
   const fontSize = computeExportFontSize(size.width);
   const raw = extractGlyphOutline(font, text, fontSize);
   const outline = centerOutline(raw, size.width, size.height);
@@ -53,6 +66,7 @@ export async function exportPng(
   canvas.width = size.width;
   canvas.height = size.height;
 
+  onProgress?.("rendering");
   if (effect.renderTarget === "canvas2d") {
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("2D 컨텍스트 생성 실패 — PNG export 불가");
@@ -64,10 +78,15 @@ export async function exportPng(
     if (glState) effect.renderGL?.(gl, glState, params, 0);
   }
 
+  onProgress?.("encoding");
   return new Promise((resolve, reject) => {
     canvas.toBlob((blob) => {
-      if (blob) resolve(blob);
-      else reject(new Error("PNG 인코딩 실패"));
+      if (!blob) {
+        reject(new Error("PNG 인코딩 실패"));
+        return;
+      }
+      onProgress?.("done");
+      resolve(blob);
     }, "image/png");
   });
 }
