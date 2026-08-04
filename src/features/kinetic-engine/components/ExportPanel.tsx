@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Font } from "opentype.js";
 import {
   PNG_EXPORT_SIZES,
@@ -10,6 +10,8 @@ import {
   type ExportPhase,
 } from "../export/png-export";
 import type { AnyEffectDefinition } from "../effects/types";
+
+const THUMBNAIL_DISPLAY_MS = 3000;
 
 interface ExportPanelProps {
   font: Font | null;
@@ -41,15 +43,50 @@ const PHASE_LABEL: Record<ExportPhase, string> = {
 export function ExportPanel({ font, text, effect, params }: ExportPanelProps) {
   const [sizeId, setSizeId] = useState(PNG_EXPORT_SIZES[0].id);
   const [phase, setPhase] = useState<ExportPhase | null>(null);
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
+  const thumbnailUrlRef = useRef<string | null>(null);
+  const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function clearThumbnail() {
+    if (dismissTimerRef.current !== null) {
+      clearTimeout(dismissTimerRef.current);
+      dismissTimerRef.current = null;
+    }
+    if (thumbnailUrlRef.current) {
+      URL.revokeObjectURL(thumbnailUrlRef.current);
+      thumbnailUrlRef.current = null;
+    }
+    setThumbnailUrl(null);
+  }
+
+  // 언마운트 시 마지막으로 만든 오브젝트 URL을 정리한다(메모리 누수 방지).
+  useEffect(() => {
+    return () => {
+      if (dismissTimerRef.current !== null) clearTimeout(dismissTimerRef.current);
+      if (thumbnailUrlRef.current) URL.revokeObjectURL(thumbnailUrlRef.current);
+    };
+  }, []);
 
   async function handleExport() {
     if (!font || !text) return;
     const size =
       PNG_EXPORT_SIZES.find((s) => s.id === sizeId) ?? PNG_EXPORT_SIZES[0];
+    clearThumbnail();
     setPhase("preparing");
     try {
       const blob = await exportPng(font, text, effect, params, size, setPhase);
       downloadBlob(blob, `${sanitizeFilename(text)}-${effect.id}.png`);
+
+      // 일반 토스트 대신, 실제로 방금 내보낸 이미지를 작은 썸네일로
+      // 보여준다 — export 파이프라인 자체가 이 제품의 가치 제안이라
+      // "완료됐다"는 텍스트보다 결과물 그 자체를 순간의 확인으로
+      // 삼는다.
+      const url = URL.createObjectURL(blob);
+      thumbnailUrlRef.current = url;
+      setThumbnailUrl(url);
+      dismissTimerRef.current = setTimeout(() => {
+        if (thumbnailUrlRef.current === url) clearThumbnail();
+      }, THUMBNAIL_DISPLAY_MS);
     } finally {
       setPhase(null);
     }
@@ -79,6 +116,23 @@ export function ExportPanel({ font, text, effect, params }: ExportPanelProps) {
         >
           {exporting ? (PHASE_LABEL[phase] ?? "내보내는 중") : "PNG 다운로드"}
         </button>
+        {thumbnailUrl && (
+          // 방금 내보낸 blob의 임시 object URL이라 next/image 최적화
+          // 대상이 아니다(원격/정적 자산이 아님).
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            key={thumbnailUrl}
+            src={thumbnailUrl}
+            alt="방금 내보낸 이미지"
+            className="h-10 w-10 border border-mist object-cover"
+            style={{
+              animationName: "export-thumbnail-scale-in",
+              animationDuration: "250ms",
+              animationTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)",
+              animationFillMode: "both",
+            }}
+          />
+        )}
       </div>
       <div
         role="progressbar"

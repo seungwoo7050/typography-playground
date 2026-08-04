@@ -118,3 +118,18 @@ body {
     filter: blur(0);
   }
 }
+
+/* export 완료 썸네일의 scale-in — 일반 토스트 대신 방금 만든
+   결과물 자체를 확인 모멘트로 쓴다(§ExportPanel). cubic-bezier에
+   1을 넘는 값을 넣어 살짝 튀어 오르는("back ease") 느낌을 준다 —
+   단순 ease-out보다 결과물이 "도착했다"는 무게감이 느껴진다. */
+@keyframes export-thumbnail-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.75);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
