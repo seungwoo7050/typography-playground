@@ -85,19 +85,32 @@ export function Canvas({ effect, outline, params, width, height }: CanvasProps) 
   }, [effect, outline, params]);
 
   return (
-    <div className="relative" style={{ width, height }}>
+    // 캔버스 드로잉 버퍼 해상도(width/height 속성)는 이펙트 수학과
+    // export 파이프라인이 그대로 참조하므로 고정 유지한다 — 여기서
+    // 반응형으로 만드는 건 어디까지나 표시 크기(CSS)뿐이다.
+    // aspect-ratio + max-width로 좁은 뷰포트에서는 컨테이너 폭에 맞춰
+    // 줄어들고, 넓은 화면에서는 원본 해상도를 넘지 않는다.
+    <div
+      className="relative mx-auto w-full"
+      style={{ maxWidth: width, aspectRatio: `${width} / ${height}` }}
+    >
+      {/* canvas는 대체 요소(replaced element)라 inset-0만으로는
+          부모 크기에 맞춰 늘어나지 않는다 — width/height 속성(드로잉
+          버퍼 해상도)이 auto인 CSS width/height보다 우선해 항상
+          자신의 attribute 크기(800x280)로 렌더링된다. w-full/h-full로
+          CSS 크기를 명시해야 표시 크기가 실제로 부모를 따라간다. */}
       <canvas
         ref={canvas2dRef}
         width={width}
         height={height}
-        className="absolute inset-0"
+        className="absolute inset-0 h-full w-full"
         style={{ display: effect.renderTarget === "canvas2d" ? "block" : "none" }}
       />
       <canvas
         ref={webglRef}
         width={width}
         height={height}
-        className="absolute inset-0"
+        className="absolute inset-0 h-full w-full"
         style={{ display: effect.renderTarget === "webgl" ? "block" : "none" }}
       />
       {/* eslint-disable-next-line @next/next/no-img-element -- 캔버스
@@ -107,7 +120,7 @@ export function Canvas({ effect, outline, params, width, height }: CanvasProps) 
         ref={overlayRef}
         alt=""
         aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-0"
+        className="pointer-events-none absolute inset-0 h-full w-full opacity-0"
       />
     </div>
   );

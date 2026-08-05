@@ -66,15 +66,13 @@ export function KineticPlayground() {
         className="w-full border-b border-mist bg-transparent px-1 py-4 text-3xl text-ink outline-none placeholder:text-graphite focus:border-signal sm:text-4xl"
       />
 
-      <div className="overflow-x-auto">
-        <Canvas
-          effect={effect}
-          outline={outline}
-          params={params}
-          width={CANVAS_WIDTH}
-          height={CANVAS_HEIGHT}
-        />
-      </div>
+      <Canvas
+        effect={effect}
+        outline={outline}
+        params={params}
+        width={CANVAS_WIDTH}
+        height={CANVAS_HEIGHT}
+      />
 
       <EffectGallery
         effects={effects}
