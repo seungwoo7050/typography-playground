@@ -70,6 +70,7 @@ export function ParamPanel({ effect, params, onChange }: ParamPanelProps) {
                 onChange={(e) =>
                   onChange({ ...params, [key]: Number(e.target.value) })
                 }
+                className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal"
               />
             </label>
           );
@@ -82,6 +83,7 @@ export function ParamPanel({ effect, params, onChange }: ParamPanelProps) {
                 type="checkbox"
                 checked={checked}
                 onChange={(e) => onChange({ ...params, [key]: e.target.checked })}
+                className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal"
               />
               {schema.label}
             </label>

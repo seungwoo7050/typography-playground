@@ -63,7 +63,11 @@ export function KineticPlayground() {
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder="텍스트를 입력하세요"
-        className="w-full border-b border-mist bg-transparent px-1 py-4 text-3xl text-ink outline-none placeholder:text-graphite focus:border-signal sm:text-4xl"
+        // GeneratorInput.tsx와 동일한 이유로 outline-style만 임의값으로
+        // 지정한다 — outline-none이 이 엘리먼트의 --tw-outline-style을
+        // 영구히 none으로 덮어써 focus-visible:outline-2가 참조하는
+        // var(--tw-outline-style)도 항상 none으로 풀리기 때문.
+        className="w-full border-b border-mist bg-transparent px-1 py-4 text-3xl text-ink outline-none placeholder:text-graphite focus:border-signal focus-visible:[outline-style:solid] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-signal sm:text-4xl"
       />
 
       <Canvas

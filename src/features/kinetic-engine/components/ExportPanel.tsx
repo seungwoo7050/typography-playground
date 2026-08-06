@@ -100,7 +100,7 @@ export function ExportPanel({ font, text, effect, params }: ExportPanelProps) {
         <select
           value={sizeId}
           onChange={(e) => setSizeId(e.target.value)}
-          className="border border-mist bg-paper px-3 py-2 text-sm text-ink"
+          className="border border-mist bg-paper px-3 py-2 text-sm text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal"
         >
           {PNG_EXPORT_SIZES.map((size) => (
             <option key={size.id} value={size.id}>
@@ -112,7 +112,7 @@ export function ExportPanel({ font, text, effect, params }: ExportPanelProps) {
           type="button"
           onClick={handleExport}
           disabled={!font || !text || exporting}
-          className="border border-ink bg-ink px-4 py-2 text-sm text-paper disabled:cursor-default disabled:opacity-40"
+          className="border border-ink bg-ink px-4 py-2 text-sm text-paper focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal disabled:cursor-default disabled:opacity-40"
         >
           {exporting ? (PHASE_LABEL[phase] ?? "내보내는 중") : "PNG 다운로드"}
         </button>

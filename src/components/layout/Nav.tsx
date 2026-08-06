@@ -18,9 +18,10 @@ function NavLink({ href, active, children }: NavLinkProps) {
       href={href}
       aria-current={active ? "page" : undefined}
       className={
-        active
+        (active
           ? "text-ink"
-          : "text-graphite transition-colors hover:text-ink"
+          : "text-graphite transition-colors hover:text-ink") +
+        " focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-signal"
       }
     >
       {children}
