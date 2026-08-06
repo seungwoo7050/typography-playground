@@ -26,7 +26,7 @@ export function FontPicker({ fonts, selectedId, onSelect }: FontPickerProps) {
             className={
               (selected
                 ? "border border-ink bg-ink px-4 py-2 text-sm text-paper"
-                : "border border-mist px-4 py-2 text-sm text-ink hover:border-signal") +
+                : "border border-mist px-4 py-2 text-sm text-ink transition-colors hover:border-signal") +
               " focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal"
             }
           >

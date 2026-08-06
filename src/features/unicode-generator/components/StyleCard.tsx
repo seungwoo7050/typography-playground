@@ -28,7 +28,7 @@ export function StyleCard({ label, output, delayMs = 0 }: StyleCardProps) {
       type="button"
       onClick={handleCopy}
       disabled={!output}
-      className="flex flex-col gap-2 border border-mist p-4 text-left enabled:hover:border-signal focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal disabled:cursor-default"
+      className="flex flex-col gap-2 border border-mist p-4 text-left transition-colors enabled:hover:border-signal focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal disabled:cursor-default"
     >
       <div className="flex items-center justify-between">
         <span className="text-xs tracking-wide text-graphite uppercase">
