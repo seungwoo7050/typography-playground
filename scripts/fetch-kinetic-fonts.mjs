@@ -58,6 +58,16 @@ const KINETIC_FONT_MANIFEST = [
   { slug: "dm-serif-display", repoSlug: "dmserifdisplay", repoFile: "DMSerifDisplay-Regular.ttf" },
   { slug: "sora", repoSlug: "sora", repoFile: "Sora[wght].ttf" },
   { slug: "zilla-slab", repoSlug: "zillaslab", repoFile: "ZillaSlab-Regular.ttf" },
+  // 나눔손글씨 붓/펜 — 한글 손글씨체(Naver/NHN, OFL). opentype.js로
+  // "Hello"/"안녕하세요"/"가나다라" 등 라틴+한글 다문자 문자열을
+  // 실제 파싱 검증했고(GSUB lookupType 6 문제 없음, bbox 정상),
+  // 완성형 한글 음절 커버리지 때문에 원본 TTF가 3MB대로 다른
+  // 폰트보다 훨씬 크다 — opentype.js 파싱용 원본이라 사용자에게
+  // 직접 전송되지는 않는다(전송되는 건 fetch-fonts.mjs가 받는
+  // latin 서브셋 WOFF2뿐, 한글 프리뷰 라벨링용이 아니라 폰트 피커
+  // 버튼의 영문 패밀리명 표시용).
+  { slug: "nanum-brush-script", repoSlug: "nanumbrushscript", repoFile: "NanumBrushScript-Regular.ttf" },
+  { slug: "nanum-pen-script", repoSlug: "nanumpenscript", repoFile: "NanumPenScript-Regular.ttf" },
 ];
 
 async function downloadFile(url, destPath) {

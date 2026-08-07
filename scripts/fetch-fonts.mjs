@@ -53,6 +53,17 @@ const FONT_MANIFEST = [
   { family: "DM Serif Display", slug: "dm-serif-display", repoSlug: "dmserifdisplay", weights: [400] },
   { family: "Sora", slug: "sora", repoSlug: "sora", weights: [400] },
   { family: "Zilla Slab", slug: "zilla-slab", repoSlug: "zillaslab", weights: [400] },
+  // 나눔손글씨 붓/펜: 이 latin 서브셋 WOFF2는 opentype.js 렌더링용이
+  // 아니라(그건 fetch-kinetic-fonts.mjs가 원본 TTF로 따로 받는다)
+  // FontPicker 버튼이 자기 폰트로 라벨을 미리보기할 때만 쓴다 —
+  // 라벨 자체가 영문 패밀리명이라 latin 서브셋으로 충분하다. Google
+  // CSS2 응답을 직접 확인해보니 이 두 폰트는 한글 음절 범위를
+  // 수십 개 unicode-range 블록으로 잘게 쪼개 보내지만(무주석),
+  // 실제 라틴 커버리지(U+0000-00FF)를 담은 블록에는 다른 폰트와
+  // 동일하게 "/* latin */" 주석이 정확히 붙어 있어 기존
+  // extractLatinWoff2Urls 로직을 그대로 재사용해도 된다(검증 완료).
+  { family: "Nanum Brush Script", slug: "nanum-brush-script", repoSlug: "nanumbrushscript", weights: [400] },
+  { family: "Nanum Pen Script", slug: "nanum-pen-script", repoSlug: "nanumpenscript", weights: [400] },
 ];
 
 async function fetchCss(family, weights) {

@@ -41,6 +41,13 @@ export const KINETIC_FONTS: KineticFontDefinition[] = [
   { id: "dm-serif-display", label: "DM Serif Display", sourcePath: "/fonts/dm-serif-display/source.ttf" },
   { id: "sora", label: "Sora", sourcePath: "/fonts/sora/source.ttf" },
   { id: "zilla-slab", label: "Zilla Slab", sourcePath: "/fonts/zilla-slab/source.ttf" },
+  // 나눔손글씨 붓/펜 — "Hello"/"안녕하세요"/"가나다라" 등 라틴+한글
+  // 다문자 문자열로 실제 파싱 검증 완료(GSUB lookupType 6 문제
+  // 없음). 한글 완성형 음절을 모두 담아 원본 TTF가 3MB대로 다른
+  // 폰트보다 훨씬 무겁다 — 선택 시에만 로드되므로(loadKineticFont가
+  // fontId별 지연 로드) 초기 번들에는 영향 없다.
+  { id: "nanum-brush-script", label: "Nanum Brush Script", sourcePath: "/fonts/nanum-brush-script/source.ttf" },
+  { id: "nanum-pen-script", label: "Nanum Pen Script", sourcePath: "/fonts/nanum-pen-script/source.ttf" },
 ];
 
 const fontCache = new Map<string, opentype.Font>();

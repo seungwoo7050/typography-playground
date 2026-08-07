@@ -226,3 +226,19 @@
   font-display: swap;
   src: url("/fonts/zilla-slab/400.woff2") format("woff2");
 }
+
+@font-face {
+  font-family: "Nanum Brush Script";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/nanum-brush-script/400.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Nanum Pen Script";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/nanum-pen-script/400.woff2") format("woff2");
+}
