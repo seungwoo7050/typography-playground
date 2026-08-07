@@ -9,7 +9,10 @@ import {
   sanitizeFilename,
   type ExportPhase,
 } from "../export/png-export";
+import { exportGif } from "../export/gif-export";
 import type { AnyEffectDefinition } from "../effects/types";
+
+type ExportFormat = "png" | "gif";
 
 const THUMBNAIL_DISPLAY_MS = 3000;
 
@@ -43,6 +46,11 @@ const PHASE_LABEL: Record<ExportPhase, string> = {
 export function ExportPanel({ font, text, effect, params }: ExportPanelProps) {
   const [sizeId, setSizeId] = useState(PNG_EXPORT_SIZES[0].id);
   const [phase, setPhase] = useState<ExportPhase | null>(null);
+  // PNG/GIF 버튼 중 어느 쪽이 지금 내보내는 중인지 — phase 하나만으로는
+  // 두 버튼 중 어디에 라벨을 표시할지 구분할 수 없어 별도로 둔다.
+  // 두 export는 동시에 실행되지 않는다(phase가 겹치면 아래 disabled로
+  // 서로를 막는다).
+  const [exportingFormat, setExportingFormat] = useState<ExportFormat | null>(null);
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
   const thumbnailUrlRef = useRef<string | null>(null);
   const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -67,28 +75,48 @@ export function ExportPanel({ font, text, effect, params }: ExportPanelProps) {
     };
   }, []);
 
-  async function handleExport() {
+  function showThumbnail(blob: Blob) {
+    // 일반 토스트 대신, 실제로 방금 내보낸 결과를 작은 썸네일로
+    // 보여준다 — export 파이프라인 자체가 이 제품의 가치 제안이라
+    // "완료됐다"는 텍스트보다 결과물 그 자체를 순간의 확인으로
+    // 삼는다. <img>는 GIF도 그대로 재생하므로 애니메이션 확인도 된다.
+    const url = URL.createObjectURL(blob);
+    thumbnailUrlRef.current = url;
+    setThumbnailUrl(url);
+    dismissTimerRef.current = setTimeout(() => {
+      if (thumbnailUrlRef.current === url) clearThumbnail();
+    }, THUMBNAIL_DISPLAY_MS);
+  }
+
+  async function handleExportPng() {
     if (!font || !text) return;
     const size =
       PNG_EXPORT_SIZES.find((s) => s.id === sizeId) ?? PNG_EXPORT_SIZES[0];
     clearThumbnail();
+    setExportingFormat("png");
     setPhase("preparing");
     try {
       const blob = await exportPng(font, text, effect, params, size, setPhase);
       downloadBlob(blob, `${sanitizeFilename(text)}-${effect.id}.png`);
-
-      // 일반 토스트 대신, 실제로 방금 내보낸 이미지를 작은 썸네일로
-      // 보여준다 — export 파이프라인 자체가 이 제품의 가치 제안이라
-      // "완료됐다"는 텍스트보다 결과물 그 자체를 순간의 확인으로
-      // 삼는다.
-      const url = URL.createObjectURL(blob);
-      thumbnailUrlRef.current = url;
-      setThumbnailUrl(url);
-      dismissTimerRef.current = setTimeout(() => {
-        if (thumbnailUrlRef.current === url) clearThumbnail();
-      }, THUMBNAIL_DISPLAY_MS);
+      showThumbnail(blob);
     } finally {
       setPhase(null);
+      setExportingFormat(null);
+    }
+  }
+
+  async function handleExportGif() {
+    if (!font || !text) return;
+    clearThumbnail();
+    setExportingFormat("gif");
+    setPhase("preparing");
+    try {
+      const blob = await exportGif(font, text, effect, params, setPhase);
+      downloadBlob(blob, `${sanitizeFilename(text)}-${effect.id}.gif`);
+      showThumbnail(blob);
+    } finally {
+      setPhase(null);
+      setExportingFormat(null);
     }
   }
 
@@ -110,11 +138,23 @@ export function ExportPanel({ font, text, effect, params }: ExportPanelProps) {
         </select>
         <button
           type="button"
-          onClick={handleExport}
+          onClick={handleExportPng}
           disabled={!font || !text || exporting}
           className="border border-ink bg-ink px-4 py-2 text-sm text-paper focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal disabled:cursor-default disabled:opacity-40"
         >
-          {exporting ? (PHASE_LABEL[phase] ?? "내보내는 중") : "PNG 다운로드"}
+          {exporting && exportingFormat === "png"
+            ? (PHASE_LABEL[phase] ?? "내보내는 중")
+            : "PNG 다운로드"}
+        </button>
+        <button
+          type="button"
+          onClick={handleExportGif}
+          disabled={!font || !text || exporting}
+          className="border border-mist px-4 py-2 text-sm text-ink transition-colors hover:border-signal focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal disabled:cursor-default disabled:opacity-40"
+        >
+          {exporting && exportingFormat === "gif"
+            ? (PHASE_LABEL[phase] ?? "내보내는 중")
+            : "GIF 다운로드"}
         </button>
         {thumbnailUrl && (
           // 방금 내보낸 blob의 임시 object URL이라 next/image 최적화
