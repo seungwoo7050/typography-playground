@@ -1,5 +1,6 @@
 "use client";
 
+import { useScrollReveal } from "@/lib/motion/scroll-reveal";
 import type { KineticFontDefinition } from "../core/font-loader";
 
 interface FontPickerProps {
@@ -12,8 +13,14 @@ interface FontPickerProps {
  * 보여준다(self-host된 WOFF2 @font-face 재사용 — opentype.js용
  * TTF와는 별개 파일이지만 같은 패밀리). */
 export function FontPicker({ fonts, selectedId, onSelect }: FontPickerProps) {
+  const { ref, revealed } = useScrollReveal<HTMLDivElement>();
   return (
-    <div className="flex flex-wrap gap-2">
+    <div
+      ref={ref}
+      className={`flex flex-wrap gap-2 transition-all duration-500 ease-out ${
+        revealed ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
+      }`}
+    >
       {fonts.map((font) => {
         const selected = font.id === selectedId;
         return (

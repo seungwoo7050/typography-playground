@@ -1,6 +1,7 @@
 "use client";
 
 import { useMagnetic } from "@/lib/motion/magnetic";
+import { useScrollReveal } from "@/lib/motion/scroll-reveal";
 import type { AnyEffectDefinition } from "../effects/types";
 
 interface EffectGalleryProps {
@@ -36,8 +37,18 @@ function EffectThumbnail({ effect, selected, onSelect }: EffectThumbnailProps) {
 }
 
 export function EffectGallery({ effects, selectedId, onSelect }: EffectGalleryProps) {
+  // 리빌은 컨테이너에만 건다 — 버튼 하나하나는 useMagnetic이 이미
+  // style.transform을 매 프레임 직접 대입하므로, 같은 버튼에 CSS
+  // translate 클래스까지 얹으면 둘이 transform 속성을 두고 서로
+  // 충돌한다(마그네틱이 매 프레임 덮어써 리빌 오프셋이 씹힌다).
+  const { ref, revealed } = useScrollReveal<HTMLDivElement>();
   return (
-    <div className="flex flex-wrap gap-2">
+    <div
+      ref={ref}
+      className={`flex flex-wrap gap-2 transition-all duration-500 ease-out ${
+        revealed ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
+      }`}
+    >
       {effects.map((effect) => (
         <EffectThumbnail
           key={effect.id}
