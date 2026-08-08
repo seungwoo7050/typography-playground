@@ -88,16 +88,24 @@ body {
 /* 필름 그레인 텍스처 — 완전한 플랫 컬러 대신 미세한 유기적 질감을
    더해 화면이 "생성형 AI가 뽑은 듯한 매끈함(슬롭)"으로 읽히지 않게
    한다. 외부 이미지 없이 SVG feTurbulence로 절차적 노이즈를
-   만들어 극히 낮은 불투명도로 얹는다 — mix-blend-mode:overlay라
-   밝은 영역은 살짝 밝게, 어두운 영역은 살짝 어둡게 걸려 컬러 자체를
-   더럽히지 않고 질감만 더한다. */
+   만들어 극히 낮은 불투명도로 얹는다.
+
+   원래 mix-blend-mode:overlay + opacity 0.035였는데, 실측(스크린샷
+   diff)해보니 opacity를 0.09까지 올려도 육안으로 거의 안 보였다 —
+   overlay 블렌드 공식 자체가 베이스가 흰색에 가까울수록
+   (--color-paper가 oklch 98% 라이트니스) 수학적으로 결과를 거의
+   그대로 통과시켜 사실상 무효화된다. multiply는 어두운 픽셀에
+   강하게, 이미 어두운 잉크색 텍스트/테두리에는 거의 영향 없이(이미
+   0에 가까운 값을 곱해도 0에 가까움) 밝은 배경에서만 질감을
+   드러낸다 — 같은 스크린샷 비교로 헤딩 텍스트가 흐려지지 않는 것도
+   확인했다. */
 .grain-overlay {
   position: fixed;
   inset: 0;
   z-index: 40;
   pointer-events: none;
-  opacity: 0.035;
-  mix-blend-mode: overlay;
+  opacity: 0.05;
+  mix-blend-mode: multiply;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-repeat: repeat;
 }
