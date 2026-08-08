@@ -82,6 +82,8 @@ export function KineticPlayground() {
         effects={effects}
         selectedId={effect.id}
         onSelect={handleSelectEffect}
+        font={font}
+        text={text}
       />
 
       <ParamPanel effect={effect} params={params} onChange={setParams} />
