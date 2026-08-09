@@ -141,3 +141,16 @@ body {
     transform: scale(1);
   }
 }
+
+/* 라우트 전환 진입 애니메이션 — §RouteTransition.tsx. 살짝 아래서
+   떠오르며 나타나 순간 이동처럼 느껴지지 않게 한다. */
+@keyframes route-transition-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

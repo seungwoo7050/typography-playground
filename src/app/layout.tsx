@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { CustomCursor } from "@/components/layout/CustomCursor";
 import { Nav } from "@/components/layout/Nav";
+import { RouteTransition } from "@/components/layout/RouteTransition";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -19,7 +20,7 @@ export default function RootLayout({
         <div className="grain-overlay" aria-hidden />
         <CustomCursor />
         <Nav />
-        {children}
+        <RouteTransition>{children}</RouteTransition>
       </body>
     </html>
   );
