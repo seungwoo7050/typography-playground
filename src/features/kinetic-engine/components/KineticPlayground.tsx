@@ -68,60 +68,70 @@ export function KineticPlayground() {
   if (!effect) return null;
 
   return (
-    <div className="flex flex-col gap-8">
-      <input
-        type="text"
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        placeholder="텍스트를 입력하세요"
-        // GeneratorInput.tsx와 동일한 이유로 outline-style만 임의값으로
-        // 지정한다 — outline-none이 이 엘리먼트의 --tw-outline-style을
-        // 영구히 none으로 덮어써 focus-visible:outline-2가 참조하는
-        // var(--tw-outline-style)도 항상 none으로 풀리기 때문.
-        className="w-full border-b border-mist bg-transparent px-1 py-4 text-3xl text-ink outline-none placeholder:text-graphite focus:border-signal focus-visible:[outline-style:solid] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-signal sm:text-4xl"
-      />
+    // 데스크톱(lg+)에서만 2단 — 왼쪽은 "스테이지"(입력+캔버스, 스크롤
+    // 중에도 sticky로 계속 보임), 오른쪽은 "인스펙터"(이펙트/파라미터/
+    // 폰트/export, 컨트롤이 많아 스크롤되는 쪽). 모바일/태블릿은
+    // 기존과 동일하게 세로로 쌓인다 — 반응형/접근성 작업을 다시
+    // 하지 않으려고 브레이크포인트 아래에서는 이전 구조(순서만
+    // 유지한 flex-col)를 그대로 보존했다.
+    <div className="flex flex-col gap-8 lg:grid lg:grid-cols-[1fr_320px] lg:items-start lg:gap-10">
+      <div className="flex flex-col gap-8 lg:sticky lg:top-12">
+        <input
+          type="text"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="텍스트를 입력하세요"
+          // GeneratorInput.tsx와 동일한 이유로 outline-style만 임의값으로
+          // 지정한다 — outline-none이 이 엘리먼트의 --tw-outline-style을
+          // 영구히 none으로 덮어써 focus-visible:outline-2가 참조하는
+          // var(--tw-outline-style)도 항상 none으로 풀리기 때문.
+          className="w-full border-b border-mist bg-transparent px-1 py-4 text-3xl text-ink outline-none placeholder:text-graphite focus:border-signal focus-visible:[outline-style:solid] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-signal sm:text-4xl"
+        />
 
-      <div className="relative">
-        <div
-          className={`transition-opacity duration-200 ${isFontLoading ? "opacity-40" : "opacity-100"}`}
-        >
-          <Canvas
-            effect={effect}
-            outline={outline}
-            params={params}
-            width={CANVAS_WIDTH}
-            height={CANVAS_HEIGHT}
-          />
+        <div className="relative">
+          <div
+            className={`transition-opacity duration-200 ${isFontLoading ? "opacity-40" : "opacity-100"}`}
+          >
+            <Canvas
+              effect={effect}
+              outline={outline}
+              params={params}
+              width={CANVAS_WIDTH}
+              height={CANVAS_HEIGHT}
+            />
+          </div>
+          {/* 폰트 전환 중엔 이전 폰트로 그린 캔버스가 그대로 남아있는
+              채 살짝 흐려지기만 한다(위 opacity-40) — 완전히 비우는
+              대신, 진짜로 바뀌는 중이라는 신호만 얹는다. 나눔손글씨류
+              같은 3MB대 폰트는 체감될 만큼 걸릴 수 있어 라벨도 같이
+              띄운다. */}
+          <span
+            role="status"
+            aria-live="polite"
+            className={`absolute top-2 left-2 bg-paper/90 px-2 py-1 text-xs text-graphite transition-opacity duration-200 ${
+              isFontLoading ? "opacity-100" : "pointer-events-none opacity-0"
+            }`}
+          >
+            폰트 불러오는 중…
+          </span>
         </div>
-        {/* 폰트 전환 중엔 이전 폰트로 그린 캔버스가 그대로 남아있는
-            채 살짝 흐려지기만 한다(위 opacity-40) — 완전히 비우는
-            대신, 진짜로 바뀌는 중이라는 신호만 얹는다. 나눔손글씨류
-            같은 3MB대 폰트는 체감될 만큼 걸릴 수 있어 라벨도 같이
-            띄운다. */}
-        <span
-          role="status"
-          aria-live="polite"
-          className={`absolute top-2 left-2 bg-paper/90 px-2 py-1 text-xs text-graphite transition-opacity duration-200 ${
-            isFontLoading ? "opacity-100" : "pointer-events-none opacity-0"
-          }`}
-        >
-          폰트 불러오는 중…
-        </span>
       </div>
 
-      <EffectGallery
-        effects={effects}
-        selectedId={effect.id}
-        onSelect={handleSelectEffect}
-        font={font}
-        text={text}
-      />
+      <div className="flex flex-col gap-8">
+        <EffectGallery
+          effects={effects}
+          selectedId={effect.id}
+          onSelect={handleSelectEffect}
+          font={font}
+          text={text}
+        />
 
-      <ParamPanel effect={effect} params={params} onChange={setParams} />
+        <ParamPanel effect={effect} params={params} onChange={setParams} />
 
-      <FontPicker fonts={KINETIC_FONTS} selectedId={fontId} onSelect={setFontId} />
+        <FontPicker fonts={KINETIC_FONTS} selectedId={fontId} onSelect={setFontId} />
 
-      <ExportPanel font={font} text={text} effect={effect} params={params} />
+        <ExportPanel font={font} text={text} effect={effect} params={params} />
+      </div>
     </div>
   );
 }
