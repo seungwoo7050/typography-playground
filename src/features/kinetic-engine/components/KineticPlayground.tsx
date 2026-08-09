@@ -21,17 +21,28 @@ export function KineticPlayground() {
   const [text, setText] = useState("Wave");
   const [fontId, setFontId] = useState(DEFAULT_FONT_ID);
   const [font, setFont] = useState<Font | null>(null);
+  // 지금 실제로 로드가 끝나 화면에 반영된 폰트의 id — fontId(선택
+  // 직후 바로 바뀜)와 다르면 "아직 로딩 중"이라는 뜻이다. 별도
+  // isLoading state를 effect 본문에서 동기적으로 set하는 대신 이렇게
+  // 파생시키면 react-hooks/set-state-in-effect를 처음부터 피할 수
+  // 있다(§scroll-reveal.ts에서 겪은 것과 같은 함정).
+  const [loadedFontId, setLoadedFontId] = useState<string | null>(null);
   const [effectId, setEffectId] = useState(effects[0]?.id ?? "");
   const [params, setParams] = useState<Record<string, unknown>>(
     effects[0]?.defaultParams ?? {},
   );
+  const isFontLoading = loadedFontId !== fontId;
 
   useEffect(() => {
     let cancelled = false;
     // 폰트 전환 중에는 이전 폰트가 그대로 남아있다 — 캔버스가
-    // 잠깐 비는 것보다 낫다(로딩 스피너는 2단계 폴리시 대상).
+    // 잠깐 비는 것보다 낫다. 대신 isFontLoading으로 캔버스를 살짝
+    // 낮춰서 "곧 바뀐다"는 신호는 준다(§Canvas 아래 opacity 처리).
     loadKineticFont(fontId).then((loaded) => {
-      if (!cancelled) setFont(loaded);
+      if (!cancelled) {
+        setFont(loaded);
+        setLoadedFontId(fontId);
+      }
     });
     return () => {
       cancelled = true;
@@ -70,13 +81,33 @@ export function KineticPlayground() {
         className="w-full border-b border-mist bg-transparent px-1 py-4 text-3xl text-ink outline-none placeholder:text-graphite focus:border-signal focus-visible:[outline-style:solid] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-signal sm:text-4xl"
       />
 
-      <Canvas
-        effect={effect}
-        outline={outline}
-        params={params}
-        width={CANVAS_WIDTH}
-        height={CANVAS_HEIGHT}
-      />
+      <div className="relative">
+        <div
+          className={`transition-opacity duration-200 ${isFontLoading ? "opacity-40" : "opacity-100"}`}
+        >
+          <Canvas
+            effect={effect}
+            outline={outline}
+            params={params}
+            width={CANVAS_WIDTH}
+            height={CANVAS_HEIGHT}
+          />
+        </div>
+        {/* 폰트 전환 중엔 이전 폰트로 그린 캔버스가 그대로 남아있는
+            채 살짝 흐려지기만 한다(위 opacity-40) — 완전히 비우는
+            대신, 진짜로 바뀌는 중이라는 신호만 얹는다. 나눔손글씨류
+            같은 3MB대 폰트는 체감될 만큼 걸릴 수 있어 라벨도 같이
+            띄운다. */}
+        <span
+          role="status"
+          aria-live="polite"
+          className={`absolute top-2 left-2 bg-paper/90 px-2 py-1 text-xs text-graphite transition-opacity duration-200 ${
+            isFontLoading ? "opacity-100" : "pointer-events-none opacity-0"
+          }`}
+        >
+          폰트 불러오는 중…
+        </span>
+      </div>
 
       <EffectGallery
         effects={effects}
