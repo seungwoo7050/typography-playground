@@ -15,7 +15,7 @@ export function HeroHeading({ children }: HeroHeadingProps) {
   return (
     <h1
       ref={ref}
-      className="mb-10 font-[family-name:var(--font-display)] text-4xl text-ink sm:text-5xl"
+      className="mb-10 font-[family-name:var(--font-display)] text-4xl text-ink [font-weight:var(--font-weight-display)] sm:text-5xl"
     >
       {children}
     </h1>

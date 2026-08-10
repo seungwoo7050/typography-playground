@@ -24,10 +24,16 @@ const FONTS_DIR = path.join(__dirname, "..", "public", "fonts");
 const USER_AGENT =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36";
 
-/** @type {{ family: string, slug: string, repoSlug: string, weights: number[] }[]} */
+/** @type {{ family: string, slug: string, repoSlug: string, weights?: number[], variableRange?: string }[]} */
 const FONT_MANIFEST = [
   { family: "Inter", slug: "inter", repoSlug: "inter", weights: [400, 500, 600, 700] },
-  { family: "Space Grotesk", slug: "space-grotesk", repoSlug: "spacegrotesk", weights: [400, 700] },
+  // Space Grotesk는 고정 굵기 대신 wght 가변축 범위 전체(300-700,
+  // opentype.js로 fvar 테이블을 직접 읽어 확인한 실제 범위)를
+  // 받는다 — 헤딩의 미세 타이포그래피(큰 디스플레이 사이즈일수록
+  // 살짝 가벼운 굵기가 시각적으로 균형 잡혀 보이는 옵티컬 보정)를
+  // 고정된 400/700 두 단계가 아니라 연속값으로 세밀하게 조정하기
+  // 위함(§globals.css의 --font-weight-display-* 토큰 참고).
+  { family: "Space Grotesk", slug: "space-grotesk", repoSlug: "spacegrotesk", variableRange: "300..700" },
   // Bricolage Grotesque: 키네틱 엔진 카탈로그에서 제외됨(§font-loader.ts
   // 주석 참고 — opentype.js가 GSUB lookupType 6 substFormat 2를
   // 지원하지 않아 두 글자 이상 텍스트에서 무조건 실패). 사이트
@@ -66,9 +72,8 @@ const FONT_MANIFEST = [
   { family: "Nanum Pen Script", slug: "nanum-pen-script", repoSlug: "nanumpenscript", weights: [400] },
 ];
 
-async function fetchCss(family, weights) {
+async function fetchCss(family, wghtParam) {
   const familyParam = encodeURIComponent(family).replace(/%20/g, "+");
-  const wghtParam = weights.join(";");
   const url = `https://fonts.googleapis.com/css2?family=${familyParam}:wght@${wghtParam}&display=swap`;
   const res = await fetch(url, { headers: { "User-Agent": USER_AGENT } });
   if (!res.ok) {
@@ -89,6 +94,15 @@ function extractLatinWoff2Urls(css) {
     result.set(weight, url);
   }
   return result;
+}
+
+/** wght@300..700 같은 범위 쿼리 응답은 font-weight가 "300 700;"처럼
+ * 공백으로 구분된 두 숫자라 위 정규식(단일 숫자 뒤 바로 ;)과 안
+ * 맞는다 — 범위 전체가 latin 블록 하나뿐이라 url()만 뽑으면 된다. */
+function extractLatinVariableWoff2Url(css) {
+  const blockRe = /\/\* latin \*\/\s*@font-face\s*{[^}]*url\(([^)]+\.woff2)\)/;
+  const match = blockRe.exec(css);
+  return match ? match[1] : null;
 }
 
 async function downloadFile(url, destPath) {
@@ -113,26 +127,37 @@ async function main() {
   await mkdir(FONTS_DIR, { recursive: true });
 
   for (const entry of FONT_MANIFEST) {
-    const { family, slug, repoSlug, weights } = entry;
+    const { family, slug, repoSlug, weights, variableRange } = entry;
     console.log(`\n[${family}]`);
-
-    const css = await fetchCss(family, weights);
-    const urls = extractLatinWoff2Urls(css);
-    if (urls.size === 0) {
-      throw new Error(`${family}: latin 서브셋 woff2 URL을 찾지 못함 — CSS 응답 형식이 바뀌었을 수 있음`);
-    }
 
     const familyDir = path.join(FONTS_DIR, slug);
     await mkdir(familyDir, { recursive: true });
 
-    for (const weight of weights) {
-      const url = urls.get(weight);
+    if (variableRange) {
+      const css = await fetchCss(family, variableRange);
+      const url = extractLatinVariableWoff2Url(css);
       if (!url) {
-        throw new Error(`${family}: weight ${weight}에 대한 woff2 URL을 찾지 못함`);
+        throw new Error(`${family}: latin 서브셋 가변 폰트 woff2 URL을 찾지 못함 — CSS 응답 형식이 바뀌었을 수 있음`);
       }
-      const destPath = path.join(familyDir, `${weight}.woff2`);
+      const destPath = path.join(familyDir, "variable.woff2");
       await downloadFile(url, destPath);
-      console.log(`  ${weight} -> ${path.relative(process.cwd(), destPath)}`);
+      console.log(`  variable(${variableRange}) -> ${path.relative(process.cwd(), destPath)}`);
+    } else {
+      const css = await fetchCss(family, weights.join(";"));
+      const urls = extractLatinWoff2Urls(css);
+      if (urls.size === 0) {
+        throw new Error(`${family}: latin 서브셋 woff2 URL을 찾지 못함 — CSS 응답 형식이 바뀌었을 수 있음`);
+      }
+
+      for (const weight of weights) {
+        const url = urls.get(weight);
+        if (!url) {
+          throw new Error(`${family}: weight ${weight}에 대한 woff2 URL을 찾지 못함`);
+        }
+        const destPath = path.join(familyDir, `${weight}.woff2`);
+        await downloadFile(url, destPath);
+        console.log(`  ${weight} -> ${path.relative(process.cwd(), destPath)}`);
+      }
     }
 
     const license = await fetchLicense(repoSlug, family);

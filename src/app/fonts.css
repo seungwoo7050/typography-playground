@@ -32,19 +32,17 @@
   src: url("/fonts/inter/700.woff2") format("woff2");
 }
 
+/* 가변 폰트(wght 300-700, opentype.js로 fvar 테이블을 직접 읽어
+   확인한 실제 축 범위) — 고정 400/700 두 단계 대신 font-weight를
+   연속값으로 지정할 수 있다. font-weight를 범위로 선언해야
+   브라우저가 이 얼굴을 가변 폰트로 취급해 축 보간을 허용한다(단일
+   숫자로 선언하면 그 값에 고정된 정적 인스턴스처럼 다뤄진다). */
 @font-face {
   font-family: "Space Grotesk";
   font-style: normal;
-  font-weight: 400;
+  font-weight: 300 700;
   font-display: swap;
-  src: url("/fonts/space-grotesk/400.woff2") format("woff2");
-}
-@font-face {
-  font-family: "Space Grotesk";
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src: url("/fonts/space-grotesk/700.woff2") format("woff2");
+  src: url("/fonts/space-grotesk/variable.woff2") format("woff2");
 }
 
 @font-face {
