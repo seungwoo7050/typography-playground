@@ -19,11 +19,20 @@ export function UnicodeGenerator() {
   const { ref: gridRef, revealed } = useScrollReveal<HTMLDivElement>();
 
   return (
-    <div className="flex flex-col gap-8">
-      <GeneratorInput value={text} onChange={setText} />
+    // 키네틱 페이지의 스테이지+인스펙터(넓은 캔버스+좁은 컨트롤)와
+    // 반대되는 비율: 여긴 입력 하나뿐이라 왼쪽 레일을 좁게(280px)
+    // 잡고 카드 그리드가 넓게 펼쳐진다 — 같은 "왼쪽 고정+오른쪽
+    // 스크롤" 메커니즘(타이핑하면서 계속 스크롤해 카드를 봐도 입력
+    // 상자가 화면 밖으로 사라지지 않음)을 공유하되, 비중은 페이지마다
+    // 다르게 둬서 두 페이지가 같은 틀을 재탕한 것처럼 보이지 않게
+    // 했다.
+    <div className="flex flex-col gap-8 lg:grid lg:grid-cols-[280px_1fr] lg:items-start lg:gap-10">
+      <div className="lg:sticky lg:top-12">
+        <GeneratorInput value={text} onChange={setText} />
+      </div>
       <div
         ref={gridRef}
-        className={`grid grid-cols-1 gap-3 transition-all duration-500 ease-out sm:grid-cols-2 lg:grid-cols-3 ${
+        className={`grid grid-cols-1 gap-3 transition-all duration-500 ease-out sm:grid-cols-2 ${
           revealed ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
         }`}
       >
