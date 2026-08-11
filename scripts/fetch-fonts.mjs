@@ -70,6 +70,27 @@ const FONT_MANIFEST = [
   // extractLatinWoff2Urls 로직을 그대로 재사용해도 된다(검증 완료).
   { family: "Nanum Brush Script", slug: "nanum-brush-script", repoSlug: "nanumbrushscript", weights: [400] },
   { family: "Nanum Pen Script", slug: "nanum-pen-script", repoSlug: "nanumpenscript", weights: [400] },
+  { family: "Nanum Gothic", slug: "nanum-gothic", repoSlug: "nanumgothic", weights: [400] },
+  { family: "Nanum Myeongjo", slug: "nanum-myeongjo", repoSlug: "nanummyeongjo", weights: [400] },
+  { family: "Nanum Gothic Coding", slug: "nanum-gothic-coding", repoSlug: "nanumgothiccoding", weights: [400] },
+  // "나눔" 외 한글 지원 폰트 15개 — §fetch-kinetic-fonts.mjs의 같은
+  // 주석 참고(라틴 카탈로그 20개와 개수를 맞추려고 카테고리
+  // 다양성 기준으로 선정, 전부 실제 파싱 검증 완료).
+  { family: "Noto Sans KR", slug: "noto-sans-kr", repoSlug: "notosanskr", weights: [400] },
+  { family: "Noto Serif KR", slug: "noto-serif-kr", repoSlug: "notoserifkr", weights: [400] },
+  { family: "Gothic A1", slug: "gothic-a1", repoSlug: "gothica1", weights: [400] },
+  { family: "IBM Plex Sans KR", slug: "ibm-plex-sans-kr", repoSlug: "ibmplexsanskr", weights: [400] },
+  { family: "Gowun Batang", slug: "gowun-batang", repoSlug: "gowunbatang", weights: [400] },
+  { family: "Hahmlet", slug: "hahmlet", repoSlug: "hahmlet", weights: [400] },
+  { family: "Black Han Sans", slug: "black-han-sans", repoSlug: "blackhansans", weights: [400] },
+  { family: "Do Hyeon", slug: "do-hyeon", repoSlug: "dohyeon", weights: [400] },
+  { family: "Jua", slug: "jua", repoSlug: "jua", weights: [400] },
+  { family: "Gowun Dodum", slug: "gowun-dodum", repoSlug: "gowundodum", weights: [400] },
+  { family: "Stylish", slug: "stylish", repoSlug: "stylish", weights: [400] },
+  { family: "Gaegu", slug: "gaegu", repoSlug: "gaegu", weights: [400] },
+  { family: "Poor Story", slug: "poor-story", repoSlug: "poorstory", weights: [400] },
+  { family: "East Sea Dokdo", slug: "east-sea-dokdo", repoSlug: "eastseadokdo", weights: [400] },
+  { family: "Song Myung", slug: "song-myung", repoSlug: "songmyung", weights: [400] },
 ];
 
 async function fetchCss(family, wghtParam) {

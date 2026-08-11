@@ -68,6 +68,43 @@ const KINETIC_FONT_MANIFEST = [
   // 버튼의 영문 패밀리명 표시용).
   { slug: "nanum-brush-script", repoSlug: "nanumbrushscript", repoFile: "NanumBrushScript-Regular.ttf" },
   { slug: "nanum-pen-script", repoSlug: "nanumpenscript", repoFile: "NanumPenScript-Regular.ttf" },
+  // 나눔고딕/나눔명조/나눔고딕코딩 — 손글씨체가 아닌 일반 본문/제목용
+  // 나눔 폰트. 같은 방식으로 "Hello"/"안녕하세요"/"가나다라" 실제
+  // 파싱 검증 완료(GSUB 문제 없음, bbox 정상).
+  { slug: "nanum-gothic", repoSlug: "nanumgothic", repoFile: "NanumGothic-Regular.ttf" },
+  { slug: "nanum-myeongjo", repoSlug: "nanummyeongjo", repoFile: "NanumMyeongjo-Regular.ttf" },
+  { slug: "nanum-gothic-coding", repoSlug: "nanumgothiccoding", repoFile: "NanumGothicCoding-Regular.ttf" },
+  // "나눔" 브랜딩 폰트는 google/fonts 전체에 5개뿐이다(git tree로
+  // 직접 확인) — 라틴 폰트 카탈로그(20개)와 개수를 맞추려고 나머지
+  // 15개는 "나눔"이 아닌 다른 한글 지원 구글 폰트로 채웠다. 전부
+  // METADATA.pb에 subsets: "korean" 있는 것 확인 + opentype.js로
+  // "Hello"/"안녕하세요"/"가나다라" 실제 파싱 검증 완료. 무작위가
+  // 아니라 라틴 카탈로그와 같은 카테고리 다양성 기준으로 골랐다:
+  // 실용 UI 산세리프 3, 세리프 3, 굵은 디스플레이 3, 모던 산세리프
+  // 2, 손글씨/스크립트 4.
+  //
+  // Noto Sans/Serif KR은 유의미하게 무겁다(각각 10.4MB/23.8MB —
+  // 다른 폰트들의 2-8MB대와 자릿수가 다르다) — 판(pan-CJK) 커버리지
+  // 때문. opentype.js 파싱용 원본이라 폰트 선택 시에만 지연
+  // 로드되지만(초기 번들 무관), 이 둘을 고를 때만 유독 체감되는
+  // 로딩 시간이 있을 수 있다는 걸 명시해둔다 — 그래도 넣은 이유는
+  // 구글 자체 표준 한글 폰트로 실사용 빈도가 가장 높은 축에
+  // 속해서, "범용적으로 쓰이는" 기준에 가장 부합하기 때문이다.
+  { slug: "noto-sans-kr", repoSlug: "notosanskr", repoFile: "NotoSansKR[wght].ttf" },
+  { slug: "noto-serif-kr", repoSlug: "notoserifkr", repoFile: "NotoSerifKR[wght].ttf" },
+  { slug: "gothic-a1", repoSlug: "gothica1", repoFile: "GothicA1-Regular.ttf" },
+  { slug: "ibm-plex-sans-kr", repoSlug: "ibmplexsanskr", repoFile: "IBMPlexSansKR-Regular.ttf" },
+  { slug: "gowun-batang", repoSlug: "gowunbatang", repoFile: "GowunBatang-Regular.ttf" },
+  { slug: "hahmlet", repoSlug: "hahmlet", repoFile: "Hahmlet[wght].ttf" },
+  { slug: "black-han-sans", repoSlug: "blackhansans", repoFile: "BlackHanSans-Regular.ttf" },
+  { slug: "do-hyeon", repoSlug: "dohyeon", repoFile: "DoHyeon-Regular.ttf" },
+  { slug: "jua", repoSlug: "jua", repoFile: "Jua-Regular.ttf" },
+  { slug: "gowun-dodum", repoSlug: "gowundodum", repoFile: "GowunDodum-Regular.ttf" },
+  { slug: "stylish", repoSlug: "stylish", repoFile: "Stylish-Regular.ttf" },
+  { slug: "gaegu", repoSlug: "gaegu", repoFile: "Gaegu-Regular.ttf" },
+  { slug: "poor-story", repoSlug: "poorstory", repoFile: "PoorStory-Regular.ttf" },
+  { slug: "east-sea-dokdo", repoSlug: "eastseadokdo", repoFile: "EastSeaDokdo-Regular.ttf" },
+  { slug: "song-myung", repoSlug: "songmyung", repoFile: "SongMyung-Regular.ttf" },
 ];
 
 async function downloadFile(url, destPath) {
