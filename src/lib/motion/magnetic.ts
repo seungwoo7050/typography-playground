@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { prefersReducedMotion } from "./reduced-motion";
 
 export interface MagneticRect {
   left: number;
@@ -107,6 +108,11 @@ export function useMagnetic<T extends HTMLElement>(
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    // 마그네틱 호버는 순전히 장식적 모션이라 reduced-motion에서는
+    // 아예 루프를 붙이지 않는다 — 버튼/링크는 평범하게 정지된
+    // 상태로 남고, 클릭/키보드 조작 자체는 useMagnetic과 무관하게
+    // 항상 정상 동작한다(§magnetic.ts 상단 설명 참고).
+    if (prefersReducedMotion()) return;
 
     function handlePointerMove(e: PointerEvent) {
       if (!el) return;

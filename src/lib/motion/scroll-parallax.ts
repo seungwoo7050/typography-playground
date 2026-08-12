@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { prefersReducedMotion } from "./reduced-motion";
 
 export interface ScrollParallaxOptions {
   /** 스크롤 1px당 이동량 배수(클수록 더 크게, 더 빠르게 움직인다) */
@@ -46,6 +47,10 @@ export function useScrollParallax<T extends HTMLElement>(
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    // reduced-motion에서는 루프를 아예 붙이지 않는다 — el.style는
+    // 한 번도 대입되지 않아 기본 상태(변형 없음, 완전 불투명)로
+    // 남는다.
+    if (prefersReducedMotion()) return;
 
     let frame: number;
 

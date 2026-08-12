@@ -5,7 +5,13 @@ import { lerp } from "@/lib/motion/magnetic";
 
 const HOVER_TARGET_SELECTOR = "button, a, input, textarea, select";
 const RING_EASE = 0.2;
-const FINE_POINTER_QUERY = "(pointer: fine)";
+// 커스텀 커서 자체가 순전히 장식적 모션(위치 지연, 호버 스케일)이라
+// reduced-motion에서는 켜지 않는다 — pointer:fine과 같은 조건
+// 취급: 네이티브 커서가 대신 보인다. no-preference가 스펙상
+// "설정 안 함/미지원" 둘 다의 기본 매칭값이라 별도 폴백이 필요
+// 없다.
+const FINE_POINTER_QUERY =
+  "(pointer: fine) and (prefers-reduced-motion: no-preference)";
 
 function subscribeFinePointer(callback: () => void) {
   const mql = window.matchMedia(FINE_POINTER_QUERY);
