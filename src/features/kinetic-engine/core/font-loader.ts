@@ -120,8 +120,14 @@ export function loadKineticFont(fontId: string): Promise<opentype.Font> {
   loadingPromises.set(fontId, promise);
   // 성공/실패 관계없이 완료되면 in-flight 목록에서 제거 — 실패 시
   // 다음 호출이 재시도할 수 있게 한다(영구히 거부된 Promise를
-  // 캐시하지 않음).
-  promise.finally(() => loadingPromises.delete(fontId));
+  // 캐시하지 않음). finally()는 원래 거부를 그대로 전달하는 새
+  // Promise를 만들고 그 Promise에는 아무도 catch를 달지 않아, 호출자가
+  // 실패를 처리해도 처리되지 않은 rejection이 하나 더 남았다 — 두
+  // 경로 모두 핸들러를 달아 정리용 체인 자체는 항상 이행되게 한다.
+  const clearInflight = () => {
+    loadingPromises.delete(fontId);
+  };
+  promise.then(clearInflight, clearInflight);
 
   return promise;
 }

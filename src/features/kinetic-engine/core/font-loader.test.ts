@@ -66,4 +66,39 @@ describe("loadKineticFont", () => {
     expect(a).toBe(b);
     expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
+
+  it("로드가 실패해도 처리되지 않은 rejection을 남기지 않는다", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: false, status: 404 } as Response),
+    );
+    const unhandled: unknown[] = [];
+    const onUnhandled = (reason: unknown) => unhandled.push(reason);
+    process.on("unhandledRejection", onUnhandled);
+    try {
+      const { loadKineticFont } = await import("./font-loader");
+      await expect(loadKineticFont("space-grotesk")).rejects.toThrow(
+        /폰트 로드 실패/,
+      );
+      // unhandledRejection은 마이크로태스크가 다 비워진 뒤에 판정된다.
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(unhandled).toEqual([]);
+    } finally {
+      process.off("unhandledRejection", onUnhandled);
+    }
+  });
+
+  it("실패한 뒤 다시 요청하면 fetch를 새로 시도한다", async () => {
+    const fetchSpy = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: false, status: 503 } as Response)
+      .mockImplementation(mockFetchOnce());
+    vi.stubGlobal("fetch", fetchSpy);
+    const { loadKineticFont } = await import("./font-loader");
+
+    await expect(loadKineticFont("space-grotesk")).rejects.toThrow(/503/);
+    const font = await loadKineticFont("space-grotesk");
+    expect(font.unitsPerEm).toBeGreaterThan(0);
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+  });
 });
