@@ -29,10 +29,16 @@ export function ParamPanel({ effect, params, onChange }: ParamPanelProps) {
       prevEffectIdRef.current !== null && prevEffectIdRef.current !== effect.id;
 
     if (effectChanged && prevHeightRef.current !== null) {
-      const newHeight = el.getBoundingClientRect().height;
-      const firstHeight = prevHeightRef.current;
-
+      // 직전 전환이 아직 진행 중이면(인라인 height가 남아 있음) 지금
+      // 화면에 보이는 높이에서 이어서 시작한다. 그 인라인 높이를 지운
+      // 뒤에 재야 새 행 구성의 실제 높이(Last)가 나온다.
+      const firstHeight = el.style.height
+        ? el.getBoundingClientRect().height
+        : prevHeightRef.current;
       el.style.transition = "none";
+      el.style.height = "";
+      const newHeight = el.getBoundingClientRect().height;
+
       el.style.overflow = "hidden";
       el.style.height = `${firstHeight}px`;
       void el.offsetHeight; // 강제 리플로우 — transition:none을 실제로 적용한다.
@@ -45,9 +51,14 @@ export function ParamPanel({ effect, params, onChange }: ParamPanelProps) {
         el.style.transition = "";
       };
       el.addEventListener("transitionend", clearOverrides, { once: true });
+
+      // 여기서 getBoundingClientRect()를 다시 읽으면 전환의 시작값,
+      // 즉 이전 높이가 나온다 — 다음 전환의 First는 방금 잰 새 높이다.
+      prevHeightRef.current = newHeight;
+    } else {
+      prevHeightRef.current = el.getBoundingClientRect().height;
     }
 
-    prevHeightRef.current = el.getBoundingClientRect().height;
     prevEffectIdRef.current = effect.id;
   }, [effect]);
 
