@@ -27,27 +27,55 @@ export function KineticPlayground() {
   // 파생시키면 react-hooks/set-state-in-effect를 처음부터 피할 수
   // 있다(§scroll-reveal.ts에서 겪은 것과 같은 함정).
   const [loadedFontId, setLoadedFontId] = useState<string | null>(null);
+  // 로드에 실패한 폰트 id — loadedFontId와 같은 이유로 effect 본문이
+  // 아니라 비동기 콜백에서만 set한다. 이 값이 없으면 실패한 폰트는
+  // "아직 로딩 중"으로 영원히 남는다(라벨과 흐린 캔버스가 사라지지
+  // 않고 다시 시도할 방법도 없었다).
+  const [failedFontId, setFailedFontId] = useState<string | null>(null);
+  // 다시 시도 버튼이 같은 fontId로 로드 effect를 다시 돌리게 하는 값.
+  const [fontLoadAttempt, setFontLoadAttempt] = useState(0);
   const [effectId, setEffectId] = useState(effects[0]?.id ?? "");
   const [params, setParams] = useState<Record<string, unknown>>(
     effects[0]?.defaultParams ?? {},
   );
-  const isFontLoading = loadedFontId !== fontId;
+  const isFontFailed = failedFontId === fontId;
+  const isFontLoading = loadedFontId !== fontId && !isFontFailed;
+  const fontLabel = KINETIC_FONTS.find((f) => f.id === fontId)?.label ?? fontId;
+  // live region 안의 문구는 상태가 있을 때만 넣는다 — 문구를 늘 DOM에
+  // 두고 opacity만 바꾸면 스크린 리더에는 로딩이 끝난 뒤에도 "불러오는
+  // 중"이 남고, 내용이 바뀌지 않으니 aria-live가 알릴 변화도 없다.
+  const fontStatusMessage = isFontFailed
+    ? `${fontLabel} 폰트를 불러오지 못했어요`
+    : isFontLoading
+      ? "폰트 불러오는 중…"
+      : "";
 
   useEffect(() => {
     let cancelled = false;
     // 폰트 전환 중에는 이전 폰트가 그대로 남아있다 — 캔버스가
     // 잠깐 비는 것보다 낫다. 대신 isFontLoading으로 캔버스를 살짝
     // 낮춰서 "곧 바뀐다"는 신호는 준다(§Canvas 아래 opacity 처리).
-    loadKineticFont(fontId).then((loaded) => {
-      if (!cancelled) {
-        setFont(loaded);
-        setLoadedFontId(fontId);
-      }
-    });
+    loadKineticFont(fontId).then(
+      (loaded) => {
+        if (!cancelled) {
+          setFont(loaded);
+          setLoadedFontId(fontId);
+        }
+      },
+      () => {
+        // 실패하면 이전 폰트로 그린 캔버스를 그대로 두고 실패만 알린다.
+        if (!cancelled) setFailedFontId(fontId);
+      },
+    );
     return () => {
       cancelled = true;
     };
-  }, [fontId]);
+  }, [fontId, fontLoadAttempt]);
+
+  function handleRetryFontLoad() {
+    setFailedFontId(null);
+    setFontLoadAttempt((n) => n + 1);
+  }
 
   const outline = useMemo(() => {
     if (!font || !text) return null;
@@ -105,15 +133,24 @@ export function KineticPlayground() {
               대신, 진짜로 바뀌는 중이라는 신호만 얹는다. 나눔손글씨류
               같은 3MB대 폰트는 체감될 만큼 걸릴 수 있어 라벨도 같이
               띄운다. */}
-          <span
-            role="status"
-            aria-live="polite"
-            className={`absolute top-2 left-2 bg-paper/90 px-2 py-1 text-xs text-graphite transition-opacity duration-200 ${
-              isFontLoading ? "opacity-100" : "pointer-events-none opacity-0"
+          <div
+            className={`absolute top-2 left-2 flex items-center gap-2 bg-paper/90 px-2 py-1 text-xs text-graphite transition-opacity duration-200 ${
+              fontStatusMessage ? "opacity-100" : "pointer-events-none opacity-0"
             }`}
           >
-            폰트 불러오는 중…
-          </span>
+            <span role="status" aria-live="polite">
+              {fontStatusMessage}
+            </span>
+            {isFontFailed && (
+              <button
+                type="button"
+                onClick={handleRetryFontLoad}
+                className="text-ink underline underline-offset-2 transition-colors hover:text-signal focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal"
+              >
+                다시 시도
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
