@@ -1,5 +1,6 @@
 import type { Font } from "opentype.js";
 import { centerOutline, extractGlyphOutline } from "../core/glyph-outline";
+import { releaseWebGLContext } from "../core/webgl-utils";
 import type { AnyEffectDefinition } from "../effects/types";
 
 export interface PngExportSize {
@@ -67,6 +68,8 @@ export async function exportPng(
   canvas.height = size.height;
 
   onProgress?.("rendering");
+  // export 전용 WebGL 컨텍스트와 리소스 — 인코딩이 끝나면 놓아준다.
+  let releaseGL = () => {};
   if (effect.renderTarget === "canvas2d") {
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("2D 컨텍스트 생성 실패 — PNG export 불가");
@@ -76,11 +79,16 @@ export async function exportPng(
     if (!gl) throw new Error("WebGL2 컨텍스트 생성 실패 — PNG export 불가");
     const glState = effect.initGL?.(gl, outline, params);
     if (glState) effect.renderGL?.(gl, glState, params, 0);
+    releaseGL = () => {
+      if (glState) effect.disposeGL?.(gl, glState);
+      releaseWebGLContext(gl);
+    };
   }
 
   onProgress?.("encoding");
   return new Promise((resolve, reject) => {
     canvas.toBlob((blob) => {
+      releaseGL();
       if (!blob) {
         reject(new Error("PNG 인코딩 실패"));
         return;

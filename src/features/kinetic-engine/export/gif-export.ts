@@ -1,5 +1,6 @@
 import type { Font } from "opentype.js";
 import { centerOutline, extractGlyphOutline } from "../core/glyph-outline";
+import { releaseWebGLContext } from "../core/webgl-utils";
 import type { AnyEffectDefinition } from "../effects/types";
 import { computeExportFontSize } from "./png-export";
 import type { GifEncodeRequest, GifEncodeResponse } from "./worker/gif-encode.worker";
@@ -87,6 +88,10 @@ function captureFrames(
       const imageData = captureCtx.getImageData(0, 0, width, height);
       frames.push(imageData.data.buffer);
     }
+    // 프레임은 전부 getImageData로 복사했으니 export 전용 컨텍스트와
+    // 리소스를 바로 놓아준다.
+    if (glState) effect.disposeGL?.(gl, glState);
+    releaseWebGLContext(gl);
   }
 
   return frames;

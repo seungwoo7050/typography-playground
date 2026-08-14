@@ -62,3 +62,14 @@ export function requestWebGL2Context(
 ): WebGL2RenderingContext | null {
   return canvas.getContext("webgl2");
 }
+
+/**
+ * 한 번 쓰고 버리는 WebGL 컨텍스트(export용 오프스크린 캔버스)를 즉시
+ * 놓아준다. 브라우저는 페이지당 활성 WebGL 컨텍스트 수에 한도를 두고
+ * 넘으면 오래된 것부터 잃게 하는데, 떼어진 캔버스의 컨텍스트가 언제
+ * 수거될지는 가비지 컬렉션에 달려 있다 — 화면의 메인 캔버스가 그 한도에
+ * 밀려나지 않도록 export가 끝나는 시점에 명시적으로 잃게 한다.
+ */
+export function releaseWebGLContext(gl: WebGL2RenderingContext): void {
+  gl.getExtension("WEBGL_lose_context")?.loseContext();
+}
