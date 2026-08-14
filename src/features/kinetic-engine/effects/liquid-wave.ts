@@ -118,6 +118,8 @@ export function hslToRgb(
 interface LiquidWaveGLState extends EffectGLState {
   program: WebGLProgram;
   vao: WebGLVertexArrayObject;
+  vbo: WebGLBuffer | null;
+  ibo: WebGLBuffer | null;
   indexCount: number;
   indexType: number;
   bboxCenterX: number;
@@ -171,6 +173,8 @@ export const liquidWaveEffect: EffectDefinition<LiquidWaveParams> = {
     return {
       program,
       vao,
+      vbo,
+      ibo,
       indexCount: mesh.indices.length,
       indexType: mesh.indices instanceof Uint32Array ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT,
       bboxCenterX: (outline.bbox.x1 + outline.bbox.x2) / 2,
@@ -184,6 +188,13 @@ export const liquidWaveEffect: EffectDefinition<LiquidWaveParams> = {
         color: gl.getUniformLocation(program, "u_color"),
       },
     };
+  },
+  disposeGL(gl, glState) {
+    const state = glState as LiquidWaveGLState;
+    gl.deleteProgram(state.program);
+    gl.deleteVertexArray(state.vao);
+    gl.deleteBuffer(state.vbo);
+    gl.deleteBuffer(state.ibo);
   },
   renderGL(gl, glState, params, t) {
     const state = glState as LiquidWaveGLState;

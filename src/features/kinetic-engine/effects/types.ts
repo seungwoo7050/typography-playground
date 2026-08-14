@@ -48,6 +48,10 @@ export interface EffectDefinition<P = Record<string, unknown>> {
     params: P,
     t: number,
   ) => void;
+  /** initGL이 만든 GPU 리소스(program, VAO, 버퍼)를 해제한다. 브라우저는
+   * 이 리소스를 컨텍스트가 사라질 때까지 들고 있으므로, glState를
+   * 버리는 쪽(RenderLoop의 씬 교체, 썸네일, export)이 반드시 부른다. */
+  disposeGL?: (gl: WebGL2RenderingContext, state: EffectGLState) => void;
 }
 
 /**

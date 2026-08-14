@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { createProjectionMatrix, hslToRgb } from "./liquid-wave";
+import { describe, expect, it, vi } from "vitest";
+import { createProjectionMatrix, hslToRgb, liquidWaveEffect } from "./liquid-wave";
 
 // initGL/renderGL은 실제 WebGL2 컨텍스트가 필요해(jsdom 미지원)
 // 여기서 테스트하지 않는다 — 이펙트 갤러리 UI가 생긴 뒤 실제
@@ -76,5 +76,23 @@ describe("hslToRgb", () => {
   it("l=1이면 흰색, l=0이면 검은색이다", () => {
     expect(hslToRgb(0, 0.5, 1)).toEqual([1, 1, 1]);
     expect(hslToRgb(0, 0.5, 0)).toEqual([0, 0, 0]);
+  });
+});
+
+describe("liquidWaveEffect.disposeGL", () => {
+  it("initGL이 만든 program, VAO, 정점/인덱스 버퍼를 모두 지운다", () => {
+    const gl = {
+      deleteProgram: vi.fn(),
+      deleteVertexArray: vi.fn(),
+      deleteBuffer: vi.fn(),
+    } as unknown as WebGL2RenderingContext;
+    const state = { program: "p", vao: "v", vbo: "b1", ibo: "b2" };
+
+    liquidWaveEffect.disposeGL?.(gl, state);
+
+    expect(gl.deleteProgram).toHaveBeenCalledWith("p");
+    expect(gl.deleteVertexArray).toHaveBeenCalledWith("v");
+    expect(gl.deleteBuffer).toHaveBeenCalledWith("b1");
+    expect(gl.deleteBuffer).toHaveBeenCalledWith("b2");
   });
 });

@@ -50,7 +50,7 @@ export function Canvas({ effect, outline, params, width, height }: CanvasProps) 
     if (gl) loop.attachWebGL(gl);
 
     loop.start();
-    return () => loop.stop();
+    return () => loop.dispose();
   }, []);
 
   useEffect(() => {

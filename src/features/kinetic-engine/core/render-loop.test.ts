@@ -202,6 +202,89 @@ describe("RenderLoop", () => {
     expect(initGL).toHaveBeenCalledTimes(2);
   });
 
+  it("아웃라인이 바뀌어 initGL을 다시 부를 때 이전 glState를 disposeGL로 해제한다", () => {
+    const { scheduler } = createFakeScheduler();
+    const first = { program: "first" };
+    const second = { program: "second" };
+    const initGL = vi.fn().mockReturnValueOnce(first).mockReturnValueOnce(second);
+    const disposeGL = vi.fn();
+    const effect: EffectDefinition = {
+      id: "test-webgl-dispose",
+      label: "Test WebGL Dispose",
+      renderTarget: "webgl",
+      defaultParams: {},
+      paramSchema: {},
+      supportsSvgExport: false,
+      initGL,
+      renderGL: vi.fn(),
+      disposeGL,
+    };
+    const gl = {} as WebGL2RenderingContext;
+    const loop = new RenderLoop(scheduler);
+    loop.attachWebGL(gl);
+
+    loop.setScene(effect, outline);
+    loop.setScene(effect, outline, { changed: true });
+    expect(disposeGL).not.toHaveBeenCalled();
+
+    loop.setScene(effect, { ...outline, fontSize: 50 });
+    expect(disposeGL).toHaveBeenCalledTimes(1);
+    expect(disposeGL).toHaveBeenCalledWith(gl, first);
+  });
+
+  it("WebGL 이펙트에서 canvas2d 이펙트로 바뀌면 이전 glState를 해제한다", () => {
+    const { scheduler } = createFakeScheduler();
+    const state = { program: "webgl" };
+    const disposeGL = vi.fn();
+    const webglEffect: EffectDefinition = {
+      id: "test-webgl-to-2d",
+      label: "Test WebGL to 2D",
+      renderTarget: "webgl",
+      defaultParams: {},
+      paramSchema: {},
+      supportsSvgExport: false,
+      initGL: vi.fn().mockReturnValue(state),
+      renderGL: vi.fn(),
+      disposeGL,
+    };
+    const gl = {} as WebGL2RenderingContext;
+    const loop = new RenderLoop(scheduler);
+    loop.attachWebGL(gl);
+
+    loop.setScene(webglEffect, outline);
+    loop.setScene(createCanvas2DEffect(vi.fn()), outline);
+
+    expect(disposeGL).toHaveBeenCalledWith(gl, state);
+  });
+
+  it("dispose하면 루프를 멈추고 현재 glState를 해제한다", () => {
+    const { scheduler, pendingCount } = createFakeScheduler();
+    const state = { program: "current" };
+    const disposeGL = vi.fn();
+    const effect: EffectDefinition = {
+      id: "test-webgl-unmount",
+      label: "Test WebGL Unmount",
+      renderTarget: "webgl",
+      defaultParams: {},
+      paramSchema: {},
+      supportsSvgExport: false,
+      initGL: vi.fn().mockReturnValue(state),
+      renderGL: vi.fn(),
+      disposeGL,
+    };
+    const gl = {} as WebGL2RenderingContext;
+    const loop = new RenderLoop(scheduler);
+    loop.attachWebGL(gl);
+    loop.setScene(effect, outline);
+    loop.start();
+
+    loop.dispose();
+
+    expect(loop.isRunning).toBe(false);
+    expect(pendingCount()).toBe(0);
+    expect(disposeGL).toHaveBeenCalledWith(gl, state);
+  });
+
   it("attachCanvas2D 이후 attachWebGL을 호출해도 ctx2d 부착이 유지된다(둘 다 동시에 붙을 수 있음)", () => {
     const { scheduler, tick } = createFakeScheduler();
     const drawFrame = vi.fn();

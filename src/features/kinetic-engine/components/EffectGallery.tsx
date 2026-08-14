@@ -45,7 +45,13 @@ function EffectPreviewCanvas({ effect, outline }: EffectPreviewCanvasProps) {
       const gl = webglRef.current?.getContext("webgl2");
       if (gl) {
         const glState = effect.initGL?.(gl, outline, effect.defaultParams);
-        if (glState) effect.renderGL?.(gl, glState, effect.defaultParams, 0);
+        if (glState) {
+          effect.renderGL?.(gl, glState, effect.defaultParams, 0);
+          // 정지 프레임 한 장만 그리므로 그린 직후 리소스를 돌려준다 —
+          // 이미 보낸 그리기 명령의 결과는 지워지지 않는다. 해제하지 않으면
+          // 텍스트나 폰트가 바뀔 때마다 썸네일의 GPU 리소스가 쌓인다.
+          effect.disposeGL?.(gl, glState);
+        }
       }
     }
   }, [effect, outline]);

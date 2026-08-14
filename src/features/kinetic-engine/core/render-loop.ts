@@ -65,12 +65,12 @@ export class RenderLoop {
     params: Record<string, unknown> = effect.defaultParams,
   ): void {
     const sceneShapeUnchanged = this.effect === effect && this.outline === outline;
+    if (!sceneShapeUnchanged) this.releaseGL();
     this.effect = effect;
     this.outline = outline;
     this.params = params;
 
     if (!sceneShapeUnchanged) {
-      this.glState = null;
       if (effect.renderTarget === "webgl" && this.gl && effect.initGL) {
         this.glState = effect.initGL(this.gl, outline, params);
       }
@@ -92,6 +92,23 @@ export class RenderLoop {
       this.scheduler.cancelFrame(this.frameHandle);
       this.frameHandle = null;
     }
+  }
+
+  /** 루프를 멈추고 현재 씬의 GPU 리소스를 해제한다 — 캔버스가 사라질
+   * 때(Canvas 언마운트) 부른다. */
+  dispose(): void {
+    this.stop();
+    this.releaseGL();
+  }
+
+  /** 이전 씬의 glState를 그 씬의 이펙트에게 돌려줘 해제한다. 버리기만
+   * 하면 program/VAO/버퍼가 컨텍스트에 계속 남아, WebGL 이펙트에서
+   * 글자를 칠 때마다(아웃라인이 바뀔 때마다) GPU 리소스가 쌓였다. */
+  private releaseGL(): void {
+    if (this.glState && this.gl && this.effect?.disposeGL) {
+      this.effect.disposeGL(this.gl, this.glState);
+    }
+    this.glState = null;
   }
 
   get isRunning(): boolean {
