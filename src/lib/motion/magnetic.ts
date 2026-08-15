@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { prefersReducedMotion } from "./reduced-motion";
+import { usePrefersReducedMotion } from "./reduced-motion";
 
 export interface MagneticRect {
   left: number;
@@ -104,6 +104,7 @@ export function useMagnetic<T extends HTMLElement>(
   const strength = options.strength ?? DEFAULT_OPTIONS.strength;
   const stiffness = options.stiffness ?? DEFAULT_OPTIONS.stiffness;
   const damping = options.damping ?? DEFAULT_OPTIONS.damping;
+  const reducedMotion = usePrefersReducedMotion();
 
   useEffect(() => {
     const el = ref.current;
@@ -112,7 +113,7 @@ export function useMagnetic<T extends HTMLElement>(
     // 아예 루프를 붙이지 않는다 — 버튼/링크는 평범하게 정지된
     // 상태로 남고, 클릭/키보드 조작 자체는 useMagnetic과 무관하게
     // 항상 정상 동작한다(§magnetic.ts 상단 설명 참고).
-    if (prefersReducedMotion()) return;
+    if (reducedMotion) return;
 
     function handlePointerMove(e: PointerEvent) {
       if (!el) return;
@@ -155,8 +156,14 @@ export function useMagnetic<T extends HTMLElement>(
     return () => {
       window.removeEventListener("pointermove", handlePointerMove);
       if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
+      // 루프가 멈춘 자리에 오프셋이 남지 않게 한다(설정이 reduce로
+      // 바뀌어 루프를 떼는 경우에도 요소가 제자리로 돌아온다).
+      el.style.transform = "";
+      position.current = { x: 0, y: 0 };
+      velocity.current = { x: 0, y: 0 };
+      target.current = { x: 0, y: 0 };
     };
-  }, [radius, strength, stiffness, damping]);
+  }, [radius, strength, stiffness, damping, reducedMotion]);
 
   return ref;
 }

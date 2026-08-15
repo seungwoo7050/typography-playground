@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { prefersReducedMotion } from "./reduced-motion";
+import { usePrefersReducedMotion } from "./reduced-motion";
 
 export interface ScrollParallaxOptions {
   /** 스크롤 1px당 이동량 배수(클수록 더 크게, 더 빠르게 움직인다) */
@@ -43,6 +43,7 @@ export function useScrollParallax<T extends HTMLElement>(
   const ref = useRef<T | null>(null);
   const speed = options.speed ?? DEFAULT_OPTIONS.speed;
   const fadeDistance = options.fadeDistance ?? DEFAULT_OPTIONS.fadeDistance;
+  const reducedMotion = usePrefersReducedMotion();
 
   useEffect(() => {
     const el = ref.current;
@@ -50,7 +51,7 @@ export function useScrollParallax<T extends HTMLElement>(
     // reduced-motion에서는 루프를 아예 붙이지 않는다 — el.style는
     // 한 번도 대입되지 않아 기본 상태(변형 없음, 완전 불투명)로
     // 남는다.
-    if (prefersReducedMotion()) return;
+    if (reducedMotion) return;
 
     let frame: number;
 
@@ -68,8 +69,13 @@ export function useScrollParallax<T extends HTMLElement>(
     }
 
     frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
-  }, [speed, fadeDistance]);
+    return () => {
+      cancelAnimationFrame(frame);
+      // 루프를 떼면 마지막으로 대입한 이동/투명도도 지운다.
+      el.style.transform = "";
+      el.style.opacity = "";
+    };
+  }, [speed, fadeDistance, reducedMotion]);
 
   return ref;
 }
