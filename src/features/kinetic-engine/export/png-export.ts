@@ -70,19 +70,27 @@ export async function exportPng(
   onProgress?.("rendering");
   // export 전용 WebGL 컨텍스트와 리소스 — 인코딩이 끝나면 놓아준다.
   let releaseGL = () => {};
-  if (effect.renderTarget === "canvas2d") {
-    const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("2D 컨텍스트 생성 실패 — PNG export 불가");
-    effect.drawFrame?.(ctx, outline, params, 0);
-  } else {
-    const gl = canvas.getContext("webgl2");
-    if (!gl) throw new Error("WebGL2 컨텍스트 생성 실패 — PNG export 불가");
-    const glState = effect.initGL?.(gl, outline, params);
-    if (glState) effect.renderGL?.(gl, glState, params, 0);
-    releaseGL = () => {
-      if (glState) effect.disposeGL?.(gl, glState);
-      releaseWebGLContext(gl);
-    };
+  try {
+    if (effect.renderTarget === "canvas2d") {
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("2D 컨텍스트 생성 실패 — PNG export 불가");
+      effect.drawFrame?.(ctx, outline, params, 0);
+    } else {
+      const gl = canvas.getContext("webgl2");
+      if (!gl) throw new Error("WebGL2 컨텍스트 생성 실패 — PNG export 불가");
+      // 컨텍스트를 얻은 직후부터 해제를 걸어 둔다 — initGL(셰이더
+      // 컴파일·링크)이나 renderGL이 던져도 export 컨텍스트가 남지 않게.
+      releaseGL = () => releaseWebGLContext(gl);
+      const glState = effect.initGL?.(gl, outline, params);
+      releaseGL = () => {
+        if (glState) effect.disposeGL?.(gl, glState);
+        releaseWebGLContext(gl);
+      };
+      if (glState) effect.renderGL?.(gl, glState, params, 0);
+    }
+  } catch (err) {
+    releaseGL();
+    throw err;
   }
 
   onProgress?.("encoding");

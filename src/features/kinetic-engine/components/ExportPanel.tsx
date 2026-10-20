@@ -52,6 +52,9 @@ export function ExportPanel({ font, text, effect, params }: ExportPanelProps) {
   // 서로를 막는다).
   const [exportingFormat, setExportingFormat] = useState<ExportFormat | null>(null);
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
+  // 마지막 내보내기가 실패한 포맷 — 버튼은 다시 눌러 재시도할 수 있으니
+  // 따로 다시 시도 버튼을 두지 않고, 무엇이 실패했는지만 알린다.
+  const [failedFormat, setFailedFormat] = useState<ExportFormat | null>(null);
   const thumbnailUrlRef = useRef<string | null>(null);
   const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -93,12 +96,17 @@ export function ExportPanel({ font, text, effect, params }: ExportPanelProps) {
     const size =
       PNG_EXPORT_SIZES.find((s) => s.id === sizeId) ?? PNG_EXPORT_SIZES[0];
     clearThumbnail();
+    setFailedFormat(null);
     setExportingFormat("png");
     setPhase("preparing");
     try {
       const blob = await exportPng(font, text, effect, params, size, setPhase);
       downloadBlob(blob, `${sanitizeFilename(text)}-${effect.id}.png`);
       showThumbnail(blob);
+    } catch (err) {
+      // 실패를 삼키지 않고 콘솔에 남기되, 사용자에게도 문구로 알린다.
+      console.error(err);
+      setFailedFormat("png");
     } finally {
       setPhase(null);
       setExportingFormat(null);
@@ -108,12 +116,17 @@ export function ExportPanel({ font, text, effect, params }: ExportPanelProps) {
   async function handleExportGif() {
     if (!font || !text) return;
     clearThumbnail();
+    setFailedFormat(null);
     setExportingFormat("gif");
     setPhase("preparing");
     try {
       const blob = await exportGif(font, text, effect, params, setPhase);
       downloadBlob(blob, `${sanitizeFilename(text)}-${effect.id}.gif`);
       showThumbnail(blob);
+    } catch (err) {
+      // 실패를 삼키지 않고 콘솔에 남기되, 사용자에게도 문구로 알린다.
+      console.error(err);
+      setFailedFormat("gif");
     } finally {
       setPhase(null);
       setExportingFormat(null);
@@ -174,6 +187,13 @@ export function ExportPanel({ font, text, effect, params }: ExportPanelProps) {
           />
         )}
       </div>
+      {/* 폰트 로드 실패 문구와 같은 방식 — live region 안의 문구는
+          상태가 있을 때만 넣는다. */}
+      <p role="status" aria-live="polite" className="text-xs text-graphite">
+        {failedFormat
+          ? `${failedFormat.toUpperCase()} 내보내기에 실패했어요. 다시 눌러 주세요.`
+          : ""}
+      </p>
       <div
         role="progressbar"
         aria-hidden={!exporting}
