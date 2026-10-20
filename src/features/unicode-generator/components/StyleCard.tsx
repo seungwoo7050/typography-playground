@@ -14,13 +14,19 @@ interface StyleCardProps {
 const COPIED_FEEDBACK_DURATION_MS = 1500;
 
 export function StyleCard({ label, output, delayMs = 0 }: StyleCardProps) {
-  const [copied, setCopied] = useState(false);
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
 
   async function handleCopy() {
     if (!output) return;
-    await navigator.clipboard.writeText(output);
-    setCopied(true);
-    setTimeout(() => setCopied(false), COPIED_FEEDBACK_DURATION_MS);
+    try {
+      await navigator.clipboard.writeText(output);
+      setCopyState("copied");
+    } catch {
+      // 권한 거부나 비보안 컨텍스트(HTTP)에서는 클립보드 쓰기가 거부된다
+      // — 아무 표시 없이 끝나지 않도록 실패를 알린다.
+      setCopyState("failed");
+    }
+    setTimeout(() => setCopyState("idle"), COPIED_FEEDBACK_DURATION_MS);
   }
 
   return (
@@ -36,7 +42,11 @@ export function StyleCard({ label, output, delayMs = 0 }: StyleCardProps) {
         </span>
         {output && (
           <span className="text-xs text-graphite" aria-live="polite">
-            {copied ? "Copied" : "Copy"}
+            {copyState === "copied"
+              ? "Copied"
+              : copyState === "failed"
+                ? "Copy failed"
+                : "Copy"}
           </span>
         )}
       </div>

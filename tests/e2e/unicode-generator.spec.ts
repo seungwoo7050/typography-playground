@@ -43,6 +43,24 @@ test.describe("유니코드 생성기: 입력 → 스타일 → 복사 플로우
     expect(clipboardText).toBe("𝐇𝐢");
   });
 
+  test("클립보드 쓰기가 거부되면 실패 피드백이 표시된다", async ({
+    page,
+  }) => {
+    // 권한 거부나 비보안 컨텍스트를 흉내 낸다 — writeText가 reject한다.
+    await page.addInitScript(() => {
+      navigator.clipboard.writeText = () =>
+        Promise.reject(new DOMException("denied", "NotAllowedError"));
+    });
+    await page.goto("/");
+
+    await page.getByPlaceholder("텍스트를 입력하세요").fill("Hi");
+
+    const card = boldCard(page);
+    await card.click();
+
+    await expect(card).toContainText("Copy failed");
+  });
+
   test("입력이 비어있으면 카드가 비활성화된다", async ({ page }) => {
     await page.goto("/");
 
