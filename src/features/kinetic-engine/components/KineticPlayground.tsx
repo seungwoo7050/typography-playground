@@ -60,6 +60,10 @@ export function KineticPlayground() {
         if (!cancelled) {
           setFont(loaded);
           setLoadedFontId(fontId);
+          // 예전에 실패했던 폰트를 다시 골라 이번엔 성공했다면 실패
+          // 표시도 거둔다 — 안 그러면 로드가 끝난 뒤에도 실패 문구와
+          // 다시 시도 버튼이 남는다.
+          setFailedFontId((id) => (id === fontId ? null : id));
         }
       },
       () => {

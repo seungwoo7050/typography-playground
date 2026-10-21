@@ -83,6 +83,8 @@ export const KINETIC_FONTS: KineticFontDefinition[] = [
   { id: "song-myung", label: "Song Myung", sourcePath: "/fonts/song-myung/source.ttf", supportsKorean: true },
 ];
 
+const FONT_FETCH_TIMEOUT_MS = 60_000;
+
 const fontCache = new Map<string, opentype.Font>();
 const loadingPromises = new Map<string, Promise<opentype.Font>>();
 
@@ -105,7 +107,13 @@ export function loadKineticFont(fontId: string): Promise<opentype.Font> {
   }
 
   const promise = (async () => {
-    const res = await fetch(definition.sourcePath);
+    // 네트워크가 멈추면 fetch는 스스로 끝나지 않아 "불러오는 중"이
+    // 영원히 남는다 — 시간 제한을 넘기면 실패로 돌려 다시 시도할 수
+    // 있게 한다. 가장 무거운 폰트(약 24MB)도 느린 회선에서 받을 수
+    // 있도록 넉넉하게 잡았다.
+    const res = await fetch(definition.sourcePath, {
+      signal: AbortSignal.timeout(FONT_FETCH_TIMEOUT_MS),
+    });
     if (!res.ok) {
       throw new Error(
         `폰트 로드 실패 (${definition.sourcePath}): ${res.status}`,
