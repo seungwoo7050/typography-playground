@@ -63,6 +63,21 @@ export function requestWebGL2Context(
   return canvas.getContext("webgl2");
 }
 
+let webgl2Supported: boolean | null = null;
+
+/**
+ * 이 브라우저가 WebGL2 컨텍스트를 만들 수 있는지 한 번만 확인해 기억한다.
+ * 확인용 컨텍스트는 바로 놓아줘 페이지의 활성 컨텍스트 한도를 쓰지 않는다.
+ */
+export function detectWebGL2Support(): boolean {
+  if (webgl2Supported === null) {
+    const gl = requestWebGL2Context(document.createElement("canvas"));
+    webgl2Supported = gl !== null;
+    if (gl) releaseWebGLContext(gl);
+  }
+  return webgl2Supported;
+}
+
 /**
  * 한 번 쓰고 버리는 WebGL 컨텍스트(export용 오프스크린 캔버스)를 즉시
  * 놓아준다. 브라우저는 페이지당 활성 WebGL 컨텍스트 수에 한도를 두고

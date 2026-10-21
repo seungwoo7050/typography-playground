@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 import type { Font } from "opentype.js";
 import { useMagnetic } from "@/lib/motion/magnetic";
 import { useScrollReveal } from "@/lib/motion/scroll-reveal";
 import { centerOutline, extractGlyphOutline, type GlyphOutline } from "../core/glyph-outline";
+import { detectWebGL2Support } from "../core/webgl-utils";
 import { computeExportFontSize } from "../export/png-export";
 import type { AnyEffectDefinition } from "../effects/types";
 
@@ -80,10 +81,11 @@ interface EffectThumbnailProps {
   effect: AnyEffectDefinition;
   outline: GlyphOutline | null;
   selected: boolean;
+  unavailable: boolean;
   onSelect: (id: string) => void;
 }
 
-function EffectThumbnail({ effect, outline, selected, onSelect }: EffectThumbnailProps) {
+function EffectThumbnail({ effect, outline, selected, unavailable, onSelect }: EffectThumbnailProps) {
   const ref = useMagnetic<HTMLButtonElement>();
   return (
     <button
@@ -91,17 +93,35 @@ function EffectThumbnail({ effect, outline, selected, onSelect }: EffectThumbnai
       type="button"
       onClick={() => onSelect(effect.id)}
       aria-pressed={selected}
+      disabled={unavailable}
+      title={unavailable ? "이 브라우저는 WebGL2를 지원하지 않아요" : undefined}
       className={
         (selected
           ? "border border-ink bg-ink text-paper"
-          : "border border-mist text-ink transition-colors hover:border-signal") +
-        " flex flex-col gap-1.5 p-1.5 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal"
+          : "border border-mist text-ink transition-colors enabled:hover:border-signal") +
+        " flex flex-col gap-1.5 p-1.5 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal disabled:cursor-default disabled:opacity-40"
       }
     >
-      <EffectPreviewCanvas effect={effect} outline={outline} />
+      {unavailable ? (
+        <div className="flex h-[34px] w-24 shrink-0 items-center justify-center bg-paper text-[10px] text-graphite">
+          WebGL2 미지원
+        </div>
+      ) : (
+        <EffectPreviewCanvas effect={effect} outline={outline} />
+      )}
       <span className="px-0.5 text-sm">{effect.label}</span>
     </button>
   );
+}
+
+function subscribeNothing() {
+  return () => {};
+}
+
+// 정적 export 시점엔 브라우저 기능을 알 수 없다 — 지원한다고 보고
+// 그린 뒤, 하이드레이션 때 실제 값으로 바로잡는다.
+function getWebGL2ServerSnapshot() {
+  return true;
 }
 
 export function EffectGallery({ effects, selectedId, onSelect, font, text }: EffectGalleryProps) {
@@ -128,6 +148,13 @@ export function EffectGallery({ effects, selectedId, onSelect, font, text }: Eff
   // translate 클래스까지 얹으면 둘이 transform 속성을 두고 서로
   // 충돌한다(마그네틱이 매 프레임 덮어써 리빌 오프셋이 씹힌다).
   const { ref, revealed } = useScrollReveal<HTMLDivElement>();
+  // WebGL2를 못 쓰는 브라우저에서는 WebGL 이펙트를 고를 수 없게 막고
+  // 이유를 보여 준다 — 고르게 두면 라이브 캔버스가 아무 알림 없이 빈다.
+  const webgl2Supported = useSyncExternalStore(
+    subscribeNothing,
+    detectWebGL2Support,
+    getWebGL2ServerSnapshot,
+  );
   return (
     <div
       ref={ref}
@@ -141,6 +168,7 @@ export function EffectGallery({ effects, selectedId, onSelect, font, text }: Eff
           effect={effect}
           outline={thumbnailOutline}
           selected={effect.id === selectedId}
+          unavailable={effect.renderTarget === "webgl" && !webgl2Supported}
           onSelect={onSelect}
         />
       ))}
