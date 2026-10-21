@@ -82,3 +82,16 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           WRANGLER_SEND_METRICS: "false"
         run: npx --yes wrangler@4.146.0 deploy
+      # 게이트의 e2e는 serve로 띄운 out/을 검증할 뿐이라 Cloudflare의 경로
+      # 해석·404 처리까지 보장하지 않는다 — 배포된 주소에 대해 두 라우트,
+      # 키네틱 엔진이 받는 폰트 원본 하나, 없는 경로의 404를 확인한다.
+      # 전파 지연을 고려해 몇 번 다시 시도한다.
+      - name: 배포 스모크 테스트
+        env:
+          BASE_URL: https://typography-playground.seungwoo7050.workers.dev
+        run: |
+          for path in / /kinetic /fonts/space-grotesk/source.ttf; do
+            curl -fsS --retry 5 --retry-delay 5 --retry-all-errors -o /dev/null "$BASE_URL$path"
+          done
+          status=$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/__smoke-not-found__")
+          test "$status" = "404"
