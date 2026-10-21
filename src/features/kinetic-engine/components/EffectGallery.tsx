@@ -113,8 +113,14 @@ export function EffectGallery({ effects, selectedId, onSelect, font, text }: Eff
   const thumbnailOutline = useMemo(() => {
     if (!font || !text) return null;
     const fontSize = computeExportFontSize(THUMBNAIL_WIDTH);
-    const raw = extractGlyphOutline(font, text, fontSize);
-    return centerOutline(raw, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
+    // 라이브 캔버스와 같은 이유로 getPath 예외를 잡는다 — 실패 문구는
+    // KineticPlayground가 띄우고, 썸네일은 비워 둔다.
+    try {
+      const raw = extractGlyphOutline(font, text, fontSize);
+      return centerOutline(raw, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
+    } catch {
+      return null;
+    }
   }, [font, text]);
 
   // 리빌은 컨테이너에만 건다 — 버튼 하나하나는 useMagnetic이 이미

@@ -41,15 +41,6 @@ export function KineticPlayground() {
   const isFontFailed = failedFontId === fontId;
   const isFontLoading = loadedFontId !== fontId && !isFontFailed;
   const fontLabel = KINETIC_FONTS.find((f) => f.id === fontId)?.label ?? fontId;
-  // live region 안의 문구는 상태가 있을 때만 넣는다 — 문구를 늘 DOM에
-  // 두고 opacity만 바꾸면 스크린 리더에는 로딩이 끝난 뒤에도 "불러오는
-  // 중"이 남고, 내용이 바뀌지 않으니 aria-live가 알릴 변화도 없다.
-  const fontStatusMessage = isFontFailed
-    ? `${fontLabel} 폰트를 불러오지 못했어요`
-    : isFontLoading
-      ? "폰트 불러오는 중…"
-      : "";
-
   useEffect(() => {
     let cancelled = false;
     // 폰트 전환 중에는 이전 폰트가 그대로 남아있다 — 캔버스가
@@ -81,13 +72,36 @@ export function KineticPlayground() {
     setFontLoadAttempt((n) => n + 1);
   }
 
-  const outline = useMemo(() => {
-    if (!font || !text) return null;
-    const raw = extractGlyphOutline(font, text, FONT_SIZE);
-    // 원본 좌표는 텍스트 원점(첫 글자 베이스라인 좌측)이 (0,0)이라
-    // 그대로 그리면 상승부가 캔버스 위쪽 바깥으로 잘려나간다.
-    return centerOutline(raw, CANVAS_WIDTH, CANVAS_HEIGHT);
+  const { outline, outlineFailed } = useMemo(() => {
+    if (!font || !text) return { outline: null, outlineFailed: false };
+    // opentype.js가 지원하지 않는 GSUB 룩업을 쓰는 폰트는 파싱은 되고
+    // getPath에서 예외를 던진다(§font-loader.ts 카탈로그 주석). 렌더 중
+    // 예외가 나면 페이지 전체가 무너지므로 여기서 잡아 문구로 바꾼다 —
+    // 캔버스는 마지막으로 그린 장면을 그대로 둔다(Canvas는 outline이
+    // null이면 씬을 바꾸지 않는다).
+    try {
+      const raw = extractGlyphOutline(font, text, FONT_SIZE);
+      // 원본 좌표는 텍스트 원점(첫 글자 베이스라인 좌측)이 (0,0)이라
+      // 그대로 그리면 상승부가 캔버스 위쪽 바깥으로 잘려나간다.
+      return {
+        outline: centerOutline(raw, CANVAS_WIDTH, CANVAS_HEIGHT),
+        outlineFailed: false,
+      };
+    } catch {
+      return { outline: null, outlineFailed: true };
+    }
   }, [font, text]);
+
+  // live region 안의 문구는 상태가 있을 때만 넣는다 — 문구를 늘 DOM에
+  // 두고 opacity만 바꾸면 스크린 리더에는 로딩이 끝난 뒤에도 "불러오는
+  // 중"이 남고, 내용이 바뀌지 않으니 aria-live가 알릴 변화도 없다.
+  const fontStatusMessage = isFontFailed
+    ? `${fontLabel} 폰트를 불러오지 못했어요`
+    : isFontLoading
+      ? "폰트 불러오는 중…"
+      : outlineFailed
+        ? "이 폰트로는 이 텍스트를 그릴 수 없어요"
+        : "";
 
   const effect = getEffect(effectId) ?? effects[0];
 
