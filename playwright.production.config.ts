@@ -13,6 +13,10 @@ export default defineConfig({
   snapshotPathTemplate:
     "{testDir}/{testFilePath}-snapshots/{arg}-{projectName}{ext}",
   workers: 1,
+  // CI에서는 일시적인 실패(러너 부하로 인한 타임아웃 등) 한 번이
+  // 배포까지 막지 않도록 한 번 다시 돌린다. 재시도로 통과한 테스트는
+  // 리포터에 flaky로 따로 표시되므로 불안정성이 묻히지 않는다.
+  retries: process.env.CI ? 1 : 0,
   use: {
     baseURL: "http://localhost:3200",
     trace: "retain-on-failure",
