@@ -144,3 +144,95 @@ test.describe("키네틱 엔진: GIF export(애니메이션) 플로우", () => {
     await expect(pngButton).toBeEnabled();
   });
 });
+
+test.describe("키네틱 엔진: 실패 경로", () => {
+  test("폰트 로드가 실패하면 문구와 다시 시도를 보여 주고, 다시 시도로 복구한다", async ({
+    page,
+  }) => {
+    await page.route("**/fonts/bungee/source.ttf", (route) =>
+      route.fulfill({ status: 503 }),
+    );
+    await page.goto("/kinetic");
+    await page.getByPlaceholder("텍스트를 입력하세요").fill("Wave");
+    await expect(page.getByRole("button", { name: "PNG 다운로드" })).toBeEnabled();
+
+    await page.getByRole("button", { name: "Bungee" }).click();
+    await expect(page.getByText("Bungee 폰트를 불러오지 못했어요")).toBeVisible();
+    const retry = page.getByRole("button", { name: "다시 시도" });
+    await expect(retry).toBeVisible();
+
+    await page.unroute("**/fonts/bungee/source.ttf");
+    await retry.click();
+    await expect(page.getByText("Bungee 폰트를 불러오지 못했어요")).toHaveCount(0);
+    await expect(retry).toHaveCount(0);
+  });
+
+  test("실패했던 폰트를 나중에 다시 골라 성공하면 실패 표시가 사라진다", async ({
+    page,
+  }) => {
+    await page.route("**/fonts/bungee/source.ttf", (route) =>
+      route.fulfill({ status: 503 }),
+    );
+    await page.goto("/kinetic");
+    await page.getByPlaceholder("텍스트를 입력하세요").fill("Wave");
+
+    await page.getByRole("button", { name: "Bungee" }).click();
+    await expect(page.getByText("Bungee 폰트를 불러오지 못했어요")).toBeVisible();
+
+    // 다른 폰트로 갔다가, 네트워크가 돌아온 뒤 다시 고른다.
+    await page.getByRole("button", { name: "Anton" }).click();
+    await expect(page.getByText("Bungee 폰트를 불러오지 못했어요")).toHaveCount(0);
+    await page.unroute("**/fonts/bungee/source.ttf");
+    await page.getByRole("button", { name: "Bungee" }).click();
+
+    await expect(page.getByText("Bungee 폰트를 불러오지 못했어요")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "다시 시도" })).toHaveCount(0);
+  });
+
+  test("GIF 인코딩 워커가 실패하면 실패 문구를 보여 주고 버튼이 다시 활성화된다", async ({
+    page,
+  }) => {
+    // 워커 생성 직후 오류를 내는 가짜 Worker로 바꿔 인코딩 실패를 만든다.
+    await page.addInitScript(() => {
+      class FailingWorker {
+        onmessage: ((event: MessageEvent) => void) | null = null;
+        onerror: ((event: { message: string }) => void) | null = null;
+        constructor() {
+          setTimeout(() => this.onerror?.({ message: "주입한 워커 실패" }), 0);
+        }
+        postMessage() {}
+        terminate() {}
+      }
+      (window as unknown as { Worker: unknown }).Worker = FailingWorker;
+    });
+    await page.goto("/kinetic");
+    await page.getByPlaceholder("텍스트를 입력하세요").fill("Hi");
+
+    const gifButton = page.getByRole("button", { name: "GIF 다운로드" });
+    await expect(gifButton).toBeEnabled();
+    await gifButton.click();
+
+    await expect(page.getByText("GIF 내보내기에 실패했어요")).toBeVisible();
+    await expect(gifButton).toBeEnabled();
+  });
+
+  test("WebGL2를 쓸 수 없으면 WebGL 이펙트를 고를 수 없다", async ({ page }) => {
+    await page.addInitScript(() => {
+      // getContext는 오버로드가 많아 시그니처를 그대로 재현하지 않고,
+      // 인자를 그대로 넘기는 느슨한 함수 타입으로 바꿔 끼운다.
+      type LooseGetContext = (this: HTMLCanvasElement, type: string, ...rest: unknown[]) => unknown;
+      const proto = HTMLCanvasElement.prototype as unknown as { getContext: LooseGetContext };
+      const original = proto.getContext;
+      proto.getContext = function (type, ...rest) {
+        if (type === "webgl2") return null;
+        return original.call(this, type, ...rest);
+      };
+    });
+    await page.goto("/kinetic");
+
+    const liquidWave = page.getByRole("button", { name: "Liquid Wave" });
+    await expect(liquidWave).toBeDisabled();
+    await expect(liquidWave).toContainText("WebGL2 미지원");
+    await expect(page.getByRole("button", { name: "Glitch" })).toBeEnabled();
+  });
+});
