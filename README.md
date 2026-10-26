@@ -2,7 +2,14 @@
 
 **한국어** · [English](README.en.md)
 
-정적 사이트 하나에 담은 작은 타이포그래피 도구 두 개입니다. 어디에나 붙여 넣을 수 있는 유니코드 텍스트 꾸미기 도구와, 움직이는 글자를 그려 PNG나 GIF로 내보내는 키네틱 타이포그래피 캔버스입니다.
+<p align="center"><img src="docs/assets/kinetic-effects.gif" alt="키네틱 엔진의 GIF 내보내기로 만든 네 가지 효과: Gradient Fill, Liquid Wave, Glitch, Outline Stroke" width="760"></p>
+
+<p align="center">
+  Next.js 16 · React 19 · TypeScript · Tailwind CSS 4 · opentype.js · WebGL2 · Web Worker · Cloudflare Workers<br>
+  2026.07 – 2026.10 · 커밋 87개 · 테스트 약 130개
+</p>
+
+정적 사이트 하나에 담은 작은 타이포그래피 도구 두 개입니다. 어디에나 붙여 넣을 수 있는 유니코드 텍스트 꾸미기 도구와, 움직이는 글자를 그려 PNG나 GIF로 내보내는 키네틱 타이포그래피 캔버스입니다. 위 GIF는 앱의 GIF 내보내기로 만든 결과물 네 개를 이어 붙인 것입니다.
 
 **서비스 주소:** https://typography-playground.seungwoo7050.workers.dev
 
@@ -15,8 +22,13 @@
 
 - **백엔드, 계정, 추적이 없습니다.** 모든 처리는 브라우저에서 합니다.
 - **폰트는 직접 호스팅합니다.** Google Fonts 카탈로그(SIL OFL)에서 받았고, 폰트마다 라이선스 파일이 `public/fonts/`에 함께 있습니다.
-- 글자는 폰트 윤곽선(opentype.js)으로 그립니다. Liquid Wave는 WebGL로 렌더링하고, GIF 인코딩은 Web Worker에서 돌려 화면이 멈추지 않습니다.
-- 동작 줄이기 설정을 따릅니다(마그네틱·패럴랙스 효과가 시스템 설정을 따라갑니다).
+- 동작 줄이기 설정을 따릅니다. CSS 전환은 전역 미디어 쿼리 하나로 끄고, 매 프레임 transform을 바꾸는 마그네틱·패럴랙스 효과는 훅으로 시스템 설정 변경까지 따라갑니다([`reduced-motion.ts`](src/lib/motion/reduced-motion.ts)).
+
+<p align="center"><img src="docs/assets/unicode-generator.png" alt="유니코드 생성기: Hello World를 Bold, Italic, Script, Gothic, Bubble 등 스타일 카드로 보여 주는 화면" width="860"></p>
+
+<p align="center"><img src="docs/assets/kinetic-playground.png" alt="키네틱 타이포그래피: Abril Fatface 폰트에 Liquid Wave 효과를 적용하고 파라미터 슬라이더를 보여 주는 화면" width="860"></p>
+
+<p align="center"><img src="docs/assets/mobile.png" alt="모바일 화면: 유니코드 생성기와, Black Han Sans로 '안녕하세요'를 그린 키네틱 캔버스" width="520"></p>
 
 ## 실행
 
@@ -24,36 +36,16 @@ Node `24.21.0`, npm `11.19.0`이 필요합니다(`.nvmrc`, `package.json`의 `en
 
 ```bash
 npm ci
-npm run dev        # http://localhost:3100
+npm run dev                    # http://localhost:3100
+npm run lint && npm run typecheck && npm run test
+npm run test:e2e:production    # 빌드한 out/을 띄워 Playwright 실행(데스크톱·모바일)
 ```
 
-| 명령                          | 하는 일                                                           |
-| ----------------------------- | ----------------------------------------------------------------- |
-| `npm run lint`                | ESLint                                                            |
-| `npm run typecheck`           | TypeScript 타입 검사(파일을 만들지 않음)                          |
-| `npm run test`                | 단위 테스트(Vitest)                                               |
-| `npm run build`               | `out/`으로 정적 export                                            |
-| `npm run preview`             | 빌드한 뒤 `out/`을 3100번 포트로 띄움                             |
-| `npm run test:e2e:production` | 빌드한 뒤 띄운 `out/`을 대상으로 Playwright 실행(데스크톱·모바일) |
-
-CI는 모든 pull request와 `main` push에서 린트 → 타입 검사 → 단위 테스트 → 빌드 → e2e를 돌리고, 모두 통과하면 `main`을 Cloudflare에 배포합니다.
-
-## 배포
-
-호스팅은 Cloudflare Workers 정적 자산입니다(`wrangler.toml`, `[assets] directory = "./out"`). Worker 스크립트 없이 빌드한 파일만 올립니다.
-
-```bash
-npm run build
-npx --yes wrangler@4.146.0 deploy
-```
-
-CI에서는 같은 명령을 저장소 secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`로 실행합니다.
+CI는 모든 pull request와 `main` push에서 린트 → 타입 검사 → 단위 테스트 → 빌드 → e2e를 돌립니다. 모두 통과하면 `main`의 `out/`을 Cloudflare Workers 정적 자산으로 배포하고(`wrangler.toml`), 배포한 주소에 스모크 테스트를 한 번 더 돌립니다.
 
 ## 구성
 
-- **Next.js 16** 정적 export(`output: "export"`, `images.unoptimized`), **React 19**, **Tailwind CSS 4**.
-- **유니코드 스타일은 데이터입니다**: `src/features/unicode-generator/data/styles/`의 스타일마다 문자를 유니코드 코드 포인트로 대응시키고, registry가 같은 입력으로 모든 스타일을 만듭니다.
-- **키네틱 엔진**: 효과마다 타입이 붙은 파라미터 스키마를 등록하고(`src/features/kinetic-engine/effects/`), 조절 패널은 그 스키마로 만들어집니다.
+- **Next.js 16** 정적 export(`output: "export"`, `images.unoptimized`), **React 19**, **Tailwind CSS 4**. 서버 런타임이 없습니다.
 
 ```
 src/app/                         페이지(/, /kinetic)와 레이아웃
@@ -62,4 +54,5 @@ src/features/kinetic-engine/     폰트 로딩, 글리프 윤곽선, 효과, PNG
 public/fonts/                    직접 호스팅하는 폰트와 라이선스
 scripts/                         폰트 내려받기 스크립트(fetch-fonts, fetch-kinetic-fonts)
 tests/e2e/                       Playwright 테스트
+docs/assets/                     README 이미지(배포에 포함되지 않음)
 ```
