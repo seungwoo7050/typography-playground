@@ -1,6 +1,7 @@
 "use client";
 
 import { useScrollReveal } from "@/lib/motion/scroll-reveal";
+import { cn } from "@/lib/utils";
 import type { KineticFontDefinition } from "../core/font-loader";
 
 interface FontPickerProps {
@@ -22,12 +23,12 @@ function FontButton({ font, selected, onSelect }: FontButtonProps) {
       onClick={() => onSelect(font.id)}
       aria-pressed={selected}
       style={{ fontFamily: `"${font.label}"` }}
-      className={
-        (selected
-          ? "border border-ink bg-ink px-4 py-2 text-sm text-paper"
-          : "border border-mist px-4 py-2 text-sm text-ink transition-colors hover:border-signal") +
-        " focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal"
-      }
+      className={cn(
+        "px-4 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal",
+        selected
+          ? "border border-ink bg-ink text-paper"
+          : "border border-mist text-ink transition-colors hover:border-signal"
+      )}
     >
       {font.label}
     </button>
@@ -78,9 +79,10 @@ export function FontPicker({ fonts, selectedId, onSelect }: FontPickerProps) {
   return (
     <div
       ref={ref}
-      className={`flex flex-col gap-4 transition-all duration-500 ease-out ${
+      className={cn(
+        "flex flex-col gap-4 transition-all duration-500 ease-out",
         revealed ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
-      }`}
+      )}
     >
       <FontGroup label="영문" fonts={latinFonts} selectedId={selectedId} onSelect={onSelect} />
       <FontGroup label="한글 지원" fonts={koreanFonts} selectedId={selectedId} onSelect={onSelect} />

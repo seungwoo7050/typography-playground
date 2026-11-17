@@ -1,3 +1,4 @@
+import { QueryClient } from "@tanstack/react-query";
 import * as opentype from "opentype.js";
 
 export interface KineticFontDefinition {
@@ -85,57 +86,56 @@ export const KINETIC_FONTS: KineticFontDefinition[] = [
 
 const FONT_FETCH_TIMEOUT_MS = 60_000;
 
-const fontCache = new Map<string, opentype.Font>();
-const loadingPromises = new Map<string, Promise<opentype.Font>>();
+export const fontQueryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: Infinity,
+      gcTime: Infinity,
+      retry: false,
+    },
+  },
+});
+
+/**
+ * 폰트 캐시를 초기화한다. 특정 fontId를 지정하면 해당 항목만 제거하고,
+ * 생략하면 QueryClient 전체 폰트 캐시를 비운다.
+ */
+export function clearKineticFontCache(fontId?: string): void {
+  if (fontId) {
+    fontQueryClient.removeQueries({ queryKey: ["kinetic-font", fontId] });
+  } else {
+    fontQueryClient.clear();
+  }
+}
 
 /**
  * 폰트를 fetch + 파싱해 opentype.js Font 객체로 반환한다. 같은
  * fontId를 다시 요청하면 캐시된 결과를 즉시 반환하고, 동시에 여러
- * 곳에서 요청해도 파싱이 중복 실행되지 않는다(진행 중인 Promise를
- * 공유).
+ * 곳에서 요청해도 QueryClient 단일비행(Single-Flight) 메커니즘을
+ * 통해 중복 파싱 없이 진행 중인 Promise를 공유한다.
  */
-export function loadKineticFont(fontId: string): Promise<opentype.Font> {
-  const cached = fontCache.get(fontId);
-  if (cached) return Promise.resolve(cached);
-
-  const inflight = loadingPromises.get(fontId);
-  if (inflight) return inflight;
-
+export async function loadKineticFont(fontId: string): Promise<opentype.Font> {
   const definition = KINETIC_FONTS.find((f) => f.id === fontId);
   if (!definition) {
-    return Promise.reject(new Error(`알 수 없는 키네틱 폰트 id: ${fontId}`));
+    throw new Error(`알 수 없는 키네틱 폰트 id: ${fontId}`);
   }
 
-  const promise = (async () => {
-    // 네트워크가 멈추면 fetch는 스스로 끝나지 않아 "불러오는 중"이
-    // 영원히 남는다 — 시간 제한을 넘기면 실패로 돌려 다시 시도할 수
-    // 있게 한다. 가장 무거운 폰트(약 24MB)도 느린 회선에서 받을 수
-    // 있도록 넉넉하게 잡았다.
-    const res = await fetch(definition.sourcePath, {
-      signal: AbortSignal.timeout(FONT_FETCH_TIMEOUT_MS),
-    });
-    if (!res.ok) {
-      throw new Error(
-        `폰트 로드 실패 (${definition.sourcePath}): ${res.status}`,
-      );
-    }
-    const buffer = await res.arrayBuffer();
-    const font = opentype.parse(buffer);
-    fontCache.set(fontId, font);
-    return font;
-  })();
-
-  loadingPromises.set(fontId, promise);
-  // 성공/실패 관계없이 완료되면 in-flight 목록에서 제거 — 실패 시
-  // 다음 호출이 재시도할 수 있게 한다(영구히 거부된 Promise를
-  // 캐시하지 않음). finally()는 원래 거부를 그대로 전달하는 새
-  // Promise를 만들고 그 Promise에는 아무도 catch를 달지 않아, 호출자가
-  // 실패를 처리해도 처리되지 않은 rejection이 하나 더 남았다 — 두
-  // 경로 모두 핸들러를 달아 정리용 체인 자체는 항상 이행되게 한다.
-  const clearInflight = () => {
-    loadingPromises.delete(fontId);
-  };
-  promise.then(clearInflight, clearInflight);
-
-  return promise;
+  return fontQueryClient.fetchQuery({
+    queryKey: ["kinetic-font", fontId],
+    queryFn: async () => {
+      // 네트워크 지연/중단 시 타임아웃을 두어 실패로 돌리고 재시도를 허용한다.
+      const res = await fetch(definition.sourcePath, {
+        signal: AbortSignal.timeout(FONT_FETCH_TIMEOUT_MS),
+      });
+      if (!res.ok) {
+        throw new Error(
+          `폰트 로드 실패 (${definition.sourcePath}): ${res.status}`,
+        );
+      }
+      const buffer = await res.arrayBuffer();
+      return opentype.parse(buffer);
+    },
+    staleTime: Infinity,
+    gcTime: Infinity,
+  });
 }

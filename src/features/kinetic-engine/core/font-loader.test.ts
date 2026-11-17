@@ -101,4 +101,15 @@ describe("loadKineticFont", () => {
     expect(font.unitsPerEm).toBeGreaterThan(0);
     expect(fetchSpy).toHaveBeenCalledTimes(2);
   });
+
+  it("clearKineticFontCache 호출 시 캐시가 비워져 다음 요청 때 다시 fetch한다", async () => {
+    const { loadKineticFont, clearKineticFontCache } = await import("./font-loader");
+    await loadKineticFont("space-grotesk");
+    const fetchSpy = fetch as ReturnType<typeof vi.fn>;
+    fetchSpy.mockClear();
+
+    clearKineticFontCache();
+    await loadKineticFont("space-grotesk");
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+  });
 });

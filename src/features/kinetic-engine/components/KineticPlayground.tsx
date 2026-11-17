@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import type { Font } from "opentype.js";
-import { KINETIC_FONTS, loadKineticFont } from "../core/font-loader";
+import { useEffect, useMemo } from "react";
+import { cn } from "@/lib/utils";
+import { KINETIC_FONTS } from "../core/font-loader";
 import { centerOutline, extractGlyphOutline } from "../core/glyph-outline";
 import { getEffect, listEffects } from "../effects/registry";
+import { useKineticStore } from "../store/useKineticStore";
 import { Canvas } from "./Canvas";
 import { EffectGallery } from "./EffectGallery";
 import { ExportPanel } from "./ExportPanel";
@@ -15,62 +16,29 @@ const effects = listEffects();
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 280;
 const FONT_SIZE = 120;
-const DEFAULT_FONT_ID = "space-grotesk";
 
 export function KineticPlayground() {
-  const [text, setText] = useState("Wave");
-  const [fontId, setFontId] = useState(DEFAULT_FONT_ID);
-  const [font, setFont] = useState<Font | null>(null);
-  // 지금 실제로 로드가 끝나 화면에 반영된 폰트의 id — fontId(선택
-  // 직후 바로 바뀜)와 다르면 "아직 로딩 중"이라는 뜻이다. 별도
-  // isLoading state를 effect 본문에서 동기적으로 set하는 대신 이렇게
-  // 파생시키면 react-hooks/set-state-in-effect를 처음부터 피할 수
-  // 있다(§scroll-reveal.ts에서 겪은 것과 같은 함정).
-  const [loadedFontId, setLoadedFontId] = useState<string | null>(null);
-  // 로드에 실패한 폰트 id — loadedFontId와 같은 이유로 effect 본문이
-  // 아니라 비동기 콜백에서만 set한다. 이 값이 없으면 실패한 폰트는
-  // "아직 로딩 중"으로 영원히 남는다(라벨과 흐린 캔버스가 사라지지
-  // 않고 다시 시도할 방법도 없었다).
-  const [failedFontId, setFailedFontId] = useState<string | null>(null);
-  // 다시 시도 버튼이 같은 fontId로 로드 effect를 다시 돌리게 하는 값.
-  const [fontLoadAttempt, setFontLoadAttempt] = useState(0);
-  const [effectId, setEffectId] = useState(effects[0]?.id ?? "");
-  const [params, setParams] = useState<Record<string, unknown>>(
-    effects[0]?.defaultParams ?? {},
-  );
-  const isFontFailed = failedFontId === fontId;
-  const isFontLoading = loadedFontId !== fontId && !isFontFailed;
-  const fontLabel = KINETIC_FONTS.find((f) => f.id === fontId)?.label ?? fontId;
-  useEffect(() => {
-    let cancelled = false;
-    // 폰트 전환 중에는 이전 폰트가 그대로 남아있다 — 캔버스가
-    // 잠깐 비는 것보다 낫다. 대신 isFontLoading으로 캔버스를 살짝
-    // 낮춰서 "곧 바뀐다"는 신호는 준다(§Canvas 아래 opacity 처리).
-    loadKineticFont(fontId).then(
-      (loaded) => {
-        if (!cancelled) {
-          setFont(loaded);
-          setLoadedFontId(fontId);
-          // 예전에 실패했던 폰트를 다시 골라 이번엔 성공했다면 실패
-          // 표시도 거둔다 — 안 그러면 로드가 끝난 뒤에도 실패 문구와
-          // 다시 시도 버튼이 남는다.
-          setFailedFontId((id) => (id === fontId ? null : id));
-        }
-      },
-      () => {
-        // 실패하면 이전 폰트로 그린 캔버스를 그대로 두고 실패만 알린다.
-        if (!cancelled) setFailedFontId(fontId);
-      },
-    );
-    return () => {
-      cancelled = true;
-    };
-  }, [fontId, fontLoadAttempt]);
+  const {
+    text,
+    fontId,
+    font,
+    isFontLoading,
+    isFontFailed,
+    effectId,
+    params,
+    setText,
+    setFontId,
+    selectEffect,
+    setParams,
+    loadFont,
+    retryFontLoad,
+  } = useKineticStore();
 
-  function handleRetryFontLoad() {
-    setFailedFontId(null);
-    setFontLoadAttempt((n) => n + 1);
-  }
+  useEffect(() => {
+    loadFont(fontId);
+  }, [fontId, loadFont]);
+
+  const fontLabel = KINETIC_FONTS.find((f) => f.id === fontId)?.label ?? fontId;
 
   const { outline, outlineFailed } = useMemo(() => {
     if (!font || !text) return { outline: null, outlineFailed: false };
@@ -105,12 +73,6 @@ export function KineticPlayground() {
 
   const effect = getEffect(effectId) ?? effects[0];
 
-  function handleSelectEffect(id: string) {
-    setEffectId(id);
-    const next = getEffect(id);
-    if (next) setParams(next.defaultParams);
-  }
-
   if (!effect) return null;
 
   return (
@@ -136,7 +98,10 @@ export function KineticPlayground() {
 
         <div className="relative">
           <div
-            className={`transition-opacity duration-200 ${isFontLoading ? "opacity-40" : "opacity-100"}`}
+            className={cn(
+              "transition-opacity duration-200",
+              isFontLoading ? "opacity-40" : "opacity-100"
+            )}
           >
             <Canvas
               effect={effect}
@@ -152,9 +117,10 @@ export function KineticPlayground() {
               같은 3MB대 폰트는 체감될 만큼 걸릴 수 있어 라벨도 같이
               띄운다. */}
           <div
-            className={`absolute top-2 left-2 flex items-center gap-2 bg-paper/90 px-2 py-1 text-xs text-graphite transition-opacity duration-200 ${
+            className={cn(
+              "absolute top-2 left-2 flex items-center gap-2 bg-paper/90 px-2 py-1 text-xs text-graphite transition-opacity duration-200",
               fontStatusMessage ? "opacity-100" : "pointer-events-none opacity-0"
-            }`}
+            )}
           >
             <span role="status" aria-live="polite">
               {fontStatusMessage}
@@ -162,7 +128,7 @@ export function KineticPlayground() {
             {isFontFailed && (
               <button
                 type="button"
-                onClick={handleRetryFontLoad}
+                onClick={retryFontLoad}
                 className="text-ink underline underline-offset-2 transition-colors hover:text-signal focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal"
               >
                 다시 시도
@@ -176,7 +142,7 @@ export function KineticPlayground() {
         <EffectGallery
           effects={effects}
           selectedId={effect.id}
-          onSelect={handleSelectEffect}
+          onSelect={selectEffect}
           font={font}
           text={text}
         />
